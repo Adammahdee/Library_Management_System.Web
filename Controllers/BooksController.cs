@@ -182,10 +182,24 @@ namespace Library_Management_System.Web.Controllers
                 var book = await _context.Books.Include(b => b.BookAuthors).FirstOrDefaultAsync(b => b.BookId == id);
                 if (book == null) return NotFound();
 
+                // Logic Error Fix: Calculate the change in total quantity to adjust availability correctly.
+                // Do not rely on hidden fields for AvailableCopies as they can be tampered with or become stale.
+                int quantityDelta = model.Quantity - book.TotalCopies;
+                int currentLoans = book.TotalCopies - book.AvailableCopies;
+
+                if (model.Quantity < currentLoans)
+                {
+                    ModelState.AddModelError("Quantity", $"Cannot reduce total stock below the number of current active loans ({currentLoans}).");
+                    ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.CategoryName).ToListAsync(), "CategoryId", "CategoryName", model.CategoryId);
+                    ViewBag.PublisherId = new SelectList(await _context.Publishers.OrderBy(p => p.PublisherName).ToListAsync(), "PublisherId", "PublisherName", model.PublisherId);
+                    ViewBag.Authors = new MultiSelectList(await _context.Authors.OrderBy(a => a.AuthorName).ToListAsync(), "AuthorId", "AuthorName", book.BookAuthors.Select(ba => ba.AuthorId).ToArray());
+                    return View(model);
+                }
+
                 book.Title = model.Title;
                 book.ISBN = model.ISBN;
                 book.TotalCopies = model.Quantity;
-                book.AvailableCopies = model.AvailableQuantity;
+                book.AvailableCopies += quantityDelta;
                 book.CategoryId = model.CategoryId;
                 book.PublisherId = model.PublisherId;
 

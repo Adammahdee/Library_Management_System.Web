@@ -19,10 +19,10 @@
                 <div class="card-body p-4">
                     <form asp-action="Create">
                         <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
-                        
+
                         <div class="row mb-3">
                             <div class="col-md-12">
-                                <label asp-for="PublisherName" class="form-label fw-bold small text-uppercase text-muted">Publisher Name</label>
+                                <label asp-for="PublisherName" class="form-label fw-bold small text-uppercase text-muted"></label>
                                 <input asp-for="PublisherName" class="form-control bg-light" placeholder="e.g. O'Reilly Media" />
                                 <span asp-validation-for="PublisherName" class="text-danger small"></span>
                             </div>
@@ -56,3 +56,9 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

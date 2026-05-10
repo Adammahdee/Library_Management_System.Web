@@ -46,7 +46,7 @@
                     <div class="row mb-0">
                         <div class="col-sm-4 text-muted small fw-bold text-uppercase">Status</div>
                         <div class="col-sm-8">
-                            <span class="badge rounded-pill @(Model.Status == "Borrowed" ? "bg-primary" : Model.Status.Contains("Overdue") ? "bg-danger" : "bg-success")">
+                            <span class="badge rounded-pill @(Model.Status == "Borrowed" ? "bg-primary" : Model.Status == "Reserved" ? "bg-info text-dark" : Model.Status.Contains("Overdue") ? "bg-danger" : "bg-success")">
                                 @Model.Status
                             </span>
                         </div>

@@ -77,6 +77,33 @@ namespace Library_Management_System.Web.Controllers
                 .Take(5)
                 .ToListAsync();
 
+            var overdueTransactions = await _context.BorrowTransactions
+                .Include(t => t.User)
+                .Include(t => t.Book)
+                .Where(t => t.ReturnDate == null && t.DueDate < DateTime.Now)
+                .OrderBy(t => t.DueDate)
+                .Take(5)
+                .Select(t => new OverdueTransactionViewModel
+                {
+                    BorrowerName = t.User.FullName ?? "N/A",
+                    BookTitle = t.Book.Title,
+                    DueDate = t.DueDate,
+                    DaysOverdue = (DateTime.Now - t.DueDate).Days
+                }).ToListAsync();
+
+            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+            var topCategories = await _context.BorrowTransactions
+                .Where(t => t.BorrowDate >= thirtyDaysAgo && t.Book != null && t.Book.Category != null)
+                .GroupBy(t => t.Book!.Category!.CategoryName)
+                .Select(g => new MostBorrowedCategoryViewModel
+                {
+                    CategoryName = g.Key ?? "Uncategorized",
+                    BorrowCount = g.Count()
+                })
+                .OrderByDescending(x => x.BorrowCount)
+                .Take(5)
+                .ToListAsync();
+
             var model = new DashboardViewModel
             {
                 TotalBooks = totalBooks,
@@ -87,7 +114,9 @@ namespace Library_Management_System.Web.Controllers
                 PendingFines = pendingFinesCount,
                 TotalFineAmount = totalFineAmount,
                 MonthlyFineRevenue = revenueData,
-                TopFineUsers = topFineUsers
+                TopFineUsers = topFineUsers,
+                OverdueTransactions = overdueTransactions,
+                TopCategories = topCategories
             };
 
             return View(model);

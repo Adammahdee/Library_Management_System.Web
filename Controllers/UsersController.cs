@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Library_Management_System.Web.Services;
 
 namespace Library_Management_System.Web.Controllers
 {
@@ -12,11 +13,13 @@ namespace Library_Management_System.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IBorrowService _borrowService;
 
-        public UsersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
+        public UsersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IBorrowService borrowService)
         {
             _context = context;
             _userManager = userManager;
+            _borrowService = borrowService;
         }
 
         // GET: Users
@@ -43,6 +46,9 @@ namespace Library_Management_System.Web.Controllers
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (user == null) return NotFound();
+
+            // Retrieve active loans using the consolidated service method
+            ViewBag.ActiveLoans = await _borrowService.GetActiveLoansAsync(id);
 
             return View(user);
         }
