@@ -1,0 +1,65 @@
+<div class="bg-light border-end vh-100" id="sidebar-wrapper">
+    <div class="sidebar-heading border-bottom bg-light py-4 px-3 fw-bold text-primary">
+        <i class="fas fa-university me-2"></i>Library Admin
+    </div>
+    <div class="list-group list-group-flush">
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+           asp-controller="Admin" asp-action="Index">
+            <i class="fas fa-chart-line me-2 fa-fw"></i> Dashboard
+        </a>
+        
+        <div class="px-3 py-2 mt-3 small text-muted text-uppercase fw-bold">Catalog Management</div>
+        
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Books" ? "active" : "")" 
+           asp-controller="Books" asp-action="Index">
+            <i class="fas fa-book me-2 fa-fw"></i> Books
+        </a>
+
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Authors" ? "active" : "")" 
+           asp-controller="Authors" asp-action="Index">
+            <i class="fas fa-user-edit me-2 fa-fw"></i> Authors
+        </a>
+        
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Category" ? "active" : "")" 
+           asp-controller="Category" asp-action="Index">
+            <i class="fas fa-list me-2 fa-fw"></i> Categories
+        </a>
+
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Publisher" ? "active" : "")" 
+           asp-controller="Publisher" asp-action="Index">
+            <i class="fas fa-building me-2 fa-fw"></i> Publishers
+        </a>
+
+        <div class="px-3 py-2 mt-3 small text-muted text-uppercase fw-bold">Administration</div>
+        
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "BorrowTransaction" ? "active" : "")" 
+           asp-controller="BorrowTransaction" asp-action="Index">
+            <i class="fas fa-exchange-alt me-2 fa-fw"></i> Transactions
+        </a>
+
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Users" ? "active" : "")" 
+           asp-controller="Users" asp-action="Index">
+            <i class="fas fa-users me-2 fa-fw"></i> User Management
+        </a>
+
+        <a class="list-group-item list-group-item-action list-group-item-light p-3 @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "AuditLogs" ? "active" : "")" 
+           asp-controller="Admin" asp-action="AuditLogs">
+            <i class="fas fa-history me-2 fa-fw"></i> Audit Logs
+        </a>
+    </div>
+</div>
+
+<style>
+    #sidebar-wrapper {
+        width: 250px;
+        transition: margin .25s ease-out;
+    }
+    .list-group-item {
+        border: none;
+    }
+    .list-group-item.active {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+        color: #0d6efd !important;
+        border-left: 4px solid #0d6efd;
+    }
+</style>

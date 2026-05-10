@@ -1,0 +1,109 @@
+@model Library_Management_System.Web.Models.ViewModels.BookViewModel
+
+@{
+    ViewData["Title"] = "Book Details";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-4">
+        <h1 class="h3 mb-0 text-dark fw-bold">Book Details</h1>
+        <div class="btn-group shadow-sm">
+            <a asp-action="Edit" asp-route-id="@Model.BookId" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit fa-sm me-1"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left fa-sm me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Main Info Card -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 fw-bold text-primary">General Information</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-sm-3 text-muted small fw-bold text-uppercase">Title</div>
+                        <div class="col-sm-9 fs-5 fw-bold text-dark">@Model.Title</div>
+                    </div>
+                    <hr class="text-light" />
+                    <div class="row mb-4">
+                        <div class="col-sm-3 text-muted small fw-bold text-uppercase">ISBN</div>
+                        <div class="col-sm-9"><code class="text-primary fw-bold">@Model.ISBN</code></div>
+                    </div>
+                    <hr class="text-light" />
+                    <div class="row mb-4">
+                        <div class="col-sm-3 text-muted small fw-bold text-uppercase">Category</div>
+                        <div class="col-sm-9">
+                            <span class="badge bg-light text-dark border">@Model.CategoryName</span>
+                        </div>
+                    </div>
+                    <hr class="text-light" />
+                    <div class="row mb-4">
+                        <div class="col-sm-3 text-muted small fw-bold text-uppercase">Publisher</div>
+                        <div class="col-sm-9 text-dark">@(Model.PublisherName ?? "Not Specified")</div>
+                    </div>
+                    <hr class="text-light" />
+                    <div class="row mb-0">
+                        <div class="col-sm-3 text-muted small fw-bold text-uppercase">Authors</div>
+                        <div class="col-sm-9">
+                            @if (Model.AuthorNames != null && Model.AuthorNames.Any())
+                            {
+                                <ul class="list-unstyled mb-0">
+                                    @foreach (var name in Model.AuthorNames)
+                                    {
+                                        <li class="mb-2"><i class="fas fa-user-edit me-2 text-muted"></i> @name</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <span class="text-muted font-italic">No authors associated.</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Sidebar Card -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4 text-center">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 fw-bold text-primary">Availability Status</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-2 mt-2">
+                        <div class="col-6">
+                            <div class="bg-light p-3 rounded">
+                                <div class="text-muted small text-uppercase fw-bold">Total Stock</div>
+                                <div class="h3 mb-0 fw-bold">@Model.Quantity</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="bg-light p-3 rounded border-start border-primary border-4">
+                                <div class="text-muted small text-uppercase fw-bold">Available</div>
+                                <div class="h3 mb-0 fw-bold">@Model.AvailableQuantity</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="progress mb-2" style="height: 8px;">
+                            @{
+                                var ratio = Model.Quantity > 0 ? (double)Model.AvailableQuantity / Model.Quantity : 0;
+                                var barColor = ratio < 0.2 ? "bg-danger" : ratio < 0.5 ? "bg-warning" : "bg-success";
+                            }
+                            <div class="progress-bar @barColor" style="width: @(ratio * 100)%"></div>
+                        </div>
+                        <small class="text-muted">@((int)(ratio * 100))% Availability</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

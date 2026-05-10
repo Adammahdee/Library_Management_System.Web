@@ -1,0 +1,81 @@
+@model Library_Management_System.Web.Models.Publisher
+
+@{
+    ViewData["Title"] = "Publisher Details";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-4">
+        <h1 class="h3 mb-0 text-dark fw-bold">Publisher Details</h1>
+        <div class="btn-group shadow-sm">
+            <a asp-action="Edit" asp-route-id="@Model.PublisherId" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit fa-sm me-1"></i> Edit
+            </a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left fa-sm me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 fw-bold text-primary">Contact Information</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted small fw-bold text-uppercase">Name</div>
+                        <div class="col-sm-8 text-dark fw-bold">@Model.PublisherName</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted small fw-bold text-uppercase">Email</div>
+                        <div class="col-sm-8 text-dark">@(Model.Email ?? "N/A")</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4 text-muted small fw-bold text-uppercase">Phone</div>
+                        <div class="col-sm-8 text-dark">@(Model.PhoneNumber ?? "N/A")</div>
+                    </div>
+                    <div class="row mb-0">
+                        <div class="col-sm-4 text-muted small fw-bold text-uppercase">Address</div>
+                        <div class="col-sm-8 text-dark">@(Model.Address ?? "N/A")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white py-3">
+                    <h6 class="m-0 fw-bold text-primary">Books Published</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @if (Model.Books != null && Model.Books.Any())
+                        {
+                            foreach (var book in Model.Books)
+                            {
+                                <a asp-controller="Books" asp-action="Details" asp-route-id="@book.BookId" 
+                                   class="list-group-item list-group-item-action py-3 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold text-dark">@book.Title</div>
+                                        <div class="small text-muted">ISBN: @book.ISBN</div>
+                                    </div>
+                                    <span class="badge bg-light text-primary border">Stock: @book.AvailableCopies/@book.TotalCopies</span>
+                                </a>
+                            }
+                        }
+                        else
+                        {
+                            <div class="p-4 text-center text-muted italic">
+                                <i class="fas fa-book-open d-block fa-2x mb-2 opacity-25"></i>
+                                No books registered for this publisher.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

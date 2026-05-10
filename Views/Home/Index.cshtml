@@ -1,0 +1,33 @@
+@{
+    ViewData["Title"] = "Home";
+}
+
+<section class="page-heading">
+    <div>
+        <span class="eyebrow">Library System</span>
+        <h1>Resource management workspace</h1>
+    </div>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a class="btn btn-primary" asp-controller="Admin" asp-action="Index">Open dashboard</a>
+    }
+    else
+    {
+        <a class="btn btn-primary" asp-controller="Account" asp-action="Login">Sign in</a>
+    }
+</section>
+
+<section class="home-grid">
+    <article class="panel">
+        <h2>Catalog operations</h2>
+        <p>Manage books, authors, publishers, categories, availability, and circulation state from one structured workspace.</p>
+    </article>
+    <article class="panel">
+        <h2>Identity-based access</h2>
+        <p>Authentication and roles are handled through ASP.NET Identity using the application user profile.</p>
+    </article>
+    <article class="panel">
+        <h2>Borrowing workflow</h2>
+        <p>Track reservations, active borrow transactions, due dates, fines, and notifications with relational integrity.</p>
+    </article>
+</section>

@@ -1,0 +1,33 @@
+@model IEnumerable<Library_Management_System.Web.Models.Category>
+
+@{
+    ViewData["Title"] = "Categories";
+}
+
+<h1>Categories</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Add Category</a>
+</p>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Category Name</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.CategoryName</td>
+
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.CategoryId">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

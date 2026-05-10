@@ -1,0 +1,82 @@
+@model Library_Management_System.Web.Models.ViewModels.BookViewModel
+
+@{
+    ViewData["Title"] = "Add New Book";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-4">
+        <h1 class="h3 mb-0 text-dark fw-bold">Add New Book</h1>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm shadow-sm">
+            <i class="fas fa-arrow-left fa-sm me-1"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label asp-for="Title" class="form-label fw-bold small text-uppercase text-muted"></label>
+                                <input asp-for="Title" class="form-control bg-light" placeholder="Enter book title" />
+                                <span asp-validation-for="Title" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="ISBN" class="form-label fw-bold small text-uppercase text-muted"></label>
+                                <input asp-for="ISBN" class="form-control bg-light" placeholder="e.g. 978-0-000-00000-0" />
+                                <span asp-validation-for="ISBN" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="CategoryId" class="form-label fw-bold small text-uppercase text-muted">Category</label>
+                                <select asp-for="CategoryId" class="form-select bg-light" asp-items="ViewBag.CategoryId">
+                                    <option value="">-- Select Category --</option>
+                                </select>
+                                <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="PublisherId" class="form-label fw-bold small text-uppercase text-muted">Publisher</label>
+                                <select asp-for="PublisherId" class="form-select bg-light" asp-items="ViewBag.PublisherId">
+                                    <option value="">-- Select Publisher (Optional) --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Quantity" class="form-label fw-bold small text-uppercase text-muted">Total Stock</label>
+                                <input asp-for="Quantity" class="form-control bg-light" type="number" min="1" value="1" />
+                                <span asp-validation-for="Quantity" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <label class="form-label fw-bold small text-uppercase text-muted">Authors</label>
+                                <select name="selectedAuthors" class="form-select bg-light" multiple="multiple" size="8" asp-items="ViewBag.Authors"></select>
+                                <div class="form-text small">Hold Ctrl (or Cmd on Mac) to select multiple authors.</div>
+                            </div>
+                        </div>
+
+                        <div class="pt-3 border-top mt-4">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-1"></i> Save Book
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

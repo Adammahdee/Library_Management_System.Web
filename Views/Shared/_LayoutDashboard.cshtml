@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Library Admin</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <style>
+        body {
+            overflow-x: hidden;
+        }
+
+        #dashboard-wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        #dashboard-content {
+            min-width: 0;
+            width: 100%;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div id="dashboard-wrapper">
+        <partial name="_AdminSidebar" />
+
+        <div id="dashboard-content">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm px-3">
+                <div class="container-fluid p-0">
+                    <span class="navbar-brand mb-0 h1">Library Admin</span>
+
+                    <div class="ms-auto">
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                Logout
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+
+            <main class="container-fluid p-4" role="main">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

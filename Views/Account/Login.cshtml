@@ -1,0 +1,47 @@
+@model Library_Management_System.Web.Models.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<section class="auth-shell">
+    <div class="auth-panel">
+        <div class="auth-heading">
+            <span class="eyebrow">University Library</span>
+            <h1>Sign in</h1>
+        </div>
+
+        <form asp-action="Login" method="post" class="auth-form">
+            <input asp-for="ReturnUrl" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+            <div class="form-group">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="username" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Password" class="form-label"></label>
+                <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label"></label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Sign in</button>
+        </form>
+
+        <div class="auth-alt">
+            <span>Need access?</span>
+            <a asp-controller="Account" asp-action="Register">Create an account</a>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

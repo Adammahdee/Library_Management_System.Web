@@ -1,0 +1,58 @@
+@model Library_Management_System.Web.Models.Publisher
+
+@{
+    ViewData["Title"] = "Add New Publisher";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-4">
+        <h1 class="h3 mb-0 text-dark fw-bold">Add New Publisher</h1>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm shadow-sm">
+            <i class="fas fa-arrow-left fa-sm me-1"></i> Back to List
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label asp-for="PublisherName" class="form-label fw-bold small text-uppercase text-muted">Publisher Name</label>
+                                <input asp-for="PublisherName" class="form-control bg-light" placeholder="e.g. O'Reilly Media" />
+                                <span asp-validation-for="PublisherName" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label fw-bold small text-uppercase text-muted"></label>
+                                <input asp-for="Email" class="form-control bg-light" type="email" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PhoneNumber" class="form-label fw-bold small text-uppercase text-muted">Phone Number</label>
+                                <input asp-for="PhoneNumber" class="form-control bg-light" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Address" class="form-label fw-bold small text-uppercase text-muted"></label>
+                            <textarea asp-for="Address" class="form-control bg-light" rows="2"></textarea>
+                            <span asp-validation-for="Address" class="text-danger small"></span>
+                        </div>
+
+                        <div class="pt-3 border-top">
+                            <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-1"></i> Save Publisher</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,83 @@
+@model IEnumerable<Library_Management_System.Web.Models.Publisher>
+
+@{
+ViewData["Title"] = "Publishers";
+}
+
+<div class="container mt-4">
+
+```
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Publishers</h2>
+
+    <a asp-action="Create" class="btn btn-primary">
+        Add Publisher
+    </a>
+</div>
+
+<table class="table table-bordered table-hover table-striped">
+
+    <thead class="table-dark">
+        <tr>
+            <th>
+                Publisher Name
+            </th>
+
+            <th width="200">
+                Actions
+            </th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    @if (Model != null && Model.Any())
+    {
+        @foreach (var item in Model)
+        {
+            <tr>
+
+                <td>
+                    @item.PublisherName
+                </td>
+
+                <td>
+
+                    <a asp-action="Edit"
+                       asp-route-id="@item.PublisherId"
+                       class="btn btn-warning btn-sm">
+                        Edit
+                    </a>
+
+                    <a asp-action="Delete"
+                       asp-route-id="@item.PublisherId"
+                       class="btn btn-danger btn-sm">
+                        Delete
+                    </a>
+
+                </td>
+
+            </tr>
+        }
+    }
+    else
+    {
+        <tr>
+            <td colspan="2" class="text-center">
+                No publishers found.
+            </td>
+        </tr>
+    }
+
+    </tbody>
+
+</table>
+```
+
+</div>
+
+@section Scripts{
+@{
+await Html.RenderPartialAsync("_ValidationScriptsPartial");
+}
+}

@@ -1,0 +1,67 @@
+@model IEnumerable<Library_Management_System.Web.Models.ViewModels.AuditLogViewModel>
+
+@{
+    ViewData["Title"] = "Audit Logs";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid">
+    <h1 class="mt-4">Audit Logs</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a asp-controller="Admin" asp-action="Index">Dashboard</a></li>
+        <li class="breadcrumb-item active">Audit Logs</li>
+    </ol>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-table me-1"></i>
+            Recent System Activities
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="auditLogsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Log ID</th>
+                            <th>Date</th>
+                            <th>Action Type</th>
+                            <th>Table Name</th>
+                            <th>User</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@Html.DisplayFor(modelItem => item.AuditLogId)</td>
+                                <td>@Html.DisplayFor(modelItem => item.LogDate)</td>
+                                <td>@Html.DisplayFor(modelItem => item.ActionType)</td>
+                                <td>@Html.DisplayFor(modelItem => item.TableName)</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.UserEmail))
+                                    {
+                                        @Html.DisplayFor(modelItem => item.UserEmail)
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </td>
+                                <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#auditLogsTable').DataTable();
+        });
+    </script>
+}

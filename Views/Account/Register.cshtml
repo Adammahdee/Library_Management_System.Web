@@ -1,0 +1,69 @@
+@model Library_Management_System.Web.Models.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Create account";
+}
+
+<section class="auth-shell">
+    <div class="auth-panel auth-panel-wide">
+        <div class="auth-heading">
+            <span class="eyebrow">Library Access</span>
+            <h1>Create account</h1>
+        </div>
+
+        <form asp-action="Register" method="post" class="auth-form">
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+            <div class="form-group">
+                <label asp-for="FullName" class="form-label"></label>
+                <input asp-for="FullName" class="form-control" autocomplete="name" />
+                <span asp-validation-for="FullName" class="text-danger small"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Email" class="form-label"></label>
+                <input asp-for="Email" class="form-control" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label asp-for="StudentNumber" class="form-label"></label>
+                    <input asp-for="StudentNumber" class="form-control" />
+                    <span asp-validation-for="StudentNumber" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="StaffNumber" class="form-label"></label>
+                    <input asp-for="StaffNumber" class="form-control" />
+                    <span asp-validation-for="StaffNumber" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="ConfirmPassword" class="form-label"></label>
+                    <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100">Create account</button>
+        </form>
+
+        <div class="auth-alt">
+            <span>Already registered?</span>
+            <a asp-controller="Account" asp-action="Login">Sign in</a>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
