@@ -1,0 +1,75 @@
+@model IEnumerable<Library_Management_System.Web.Models.BorrowTransaction>
+
+@{
+    ViewData["Title"] = "Circulation Management";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4">
+    <div class="d-flex align-items-center justify-content-between mb-4 mt-4">
+        <h1 class="h3 mb-0 text-dark fw-bold">Circulation</h1>
+        <div class="btn-group">
+            <a asp-action="Create" class="btn btn-success shadow-sm">Create Transaction</a>
+            <a asp-action="Checkout" class="btn btn-primary shadow-sm">New Checkout</a>
+            <a asp-action="Reserve" class="btn btn-outline-primary shadow-sm">Reserve Book</a>
+            <a asp-action="History" class="btn btn-outline-dark shadow-sm">History</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3 border-bottom">
+            <h6 class="m-0 fw-bold text-primary">Active and Past Transactions</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Borrower</th>
+                            <th>Book</th>
+                            <th>Borrow Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No transactions found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold">@item.User?.FullName</div>
+                                        <div class="small text-muted">@item.User?.Email</div>
+                                    </td>
+                                    <td>@item.Book?.Title</td>
+                                    <td>@item.BorrowDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@item.DueDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="badge bg-secondary">@item.Status</span></td>
+                                    <td class="text-end pe-4">
+                                        <a asp-action="Details" asp-route-id="@item.TransactionId" class="btn btn-sm btn-outline-info">Details</a>
+                                        <a asp-action="Edit" asp-route-id="@item.TransactionId" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        @if (item.ReturnDate == null)
+                                        {
+                                            <form asp-action="Return" asp-route-id="@item.TransactionId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-success">Return</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

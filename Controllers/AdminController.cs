@@ -124,24 +124,39 @@ namespace Library_Management_System.Web.Controllers
 
         public async Task<IActionResult> FineManagement()
         {
-            var unpaidFines = await _context.Fines
-                .Include(f => f.BorrowTransaction)
-                    .ThenInclude(bt => bt.User)
-                .Include(f => f.BorrowTransaction)
-                    .ThenInclude(bt => bt.Book)
-                .Where(f => !f.IsPaid)
-                .OrderByDescending(f => f.CreatedAt)
-                .ToListAsync();
+            var unpaidFines = await _fineService.GetUnpaidFinesAsync();
 
             return View(unpaidFines);
+        }
+
+        public async Task<IActionResult> AuditLogs()
+        {
+            var logs = await _context.AuditLogs
+                .Include(a => a.User)
+                .OrderByDescending(a => a.LogDate)
+                .Take(200)
+                .Select(a => new AuditLogViewModel
+                {
+                    AuditLogId = a.AuditLogId,
+                    TableName = a.TableName,
+                    ActionType = a.ActionType,
+                    UserId = a.UserId,
+                    UserEmail = a.User != null ? a.User.Email : null,
+                    LogDate = a.LogDate,
+                    Description = a.Description
+                })
+                .ToListAsync();
+
+            return View(logs);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkPaid(int id)
         {
-            await _fineService.PayFineAsync(id);
-            TempData["SuccessMessage"] = "Fine marked as paid successfully.";
+            var paid = await _fineService.PayFineAsync(id);
+            TempData[paid ? "SuccessMessage" : "ErrorMessage"] =
+                paid ? "Fine marked as paid successfully." : "Fine was not found.";
             return RedirectToAction(nameof(FineManagement));
         }
     }

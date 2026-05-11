@@ -27,7 +27,6 @@ namespace Library_Management_System.Web.Data
         public DbSet<Fine> Fines => Set<Fine>();
         public DbSet<Notification> Notifications => Set<Notification>();
         public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-        public DbSet<Transaction> Transactions => Set<Transaction>();
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

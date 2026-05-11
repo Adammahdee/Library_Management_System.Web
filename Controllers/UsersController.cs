@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Library_Management_System.Web.Services;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Library_Management_System.Web.Controllers
 {
@@ -13,12 +14,14 @@ namespace Library_Management_System.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IBorrowService _borrowService;
 
-        public UsersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, IBorrowService borrowService)
+        public UsersController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IBorrowService borrowService)
         {
             _context = context;
             _userManager = userManager;
+            _roleManager = roleManager;
             _borrowService = borrowService;
         }
 
@@ -29,6 +32,14 @@ namespace Library_Management_System.Web.Controllers
                 .Include(u => u.Department)
                 .OrderBy(u => u.FullName)
                 .ToListAsync();
+
+            var userRoles = new Dictionary<string, IList<string>>();
+            foreach (var user in users)
+            {
+                userRoles[user.Id] = await _userManager.GetRolesAsync(user);
+            }
+
+            ViewBag.UserRoles = userRoles;
             return View(users);
         }
 
@@ -49,6 +60,12 @@ namespace Library_Management_System.Web.Controllers
 
             // Retrieve active loans using the consolidated service method
             ViewBag.ActiveLoans = await _borrowService.GetActiveLoansAsync(id);
+            ViewBag.UserRoles = await _userManager.GetRolesAsync(user);
+            ViewBag.AvailableRoles = new SelectList(
+                await _roleManager.Roles.OrderBy(r => r.Name).Select(r => r.Name!).ToListAsync());
+            ViewBag.BorrowHistory = user.BorrowTransactions
+                .OrderByDescending(bt => bt.BorrowDate)
+                .ToList();
 
             return View(user);
         }
@@ -64,6 +81,139 @@ namespace Library_Management_System.Web.Controllers
             user.IsActive = !user.IsActive;
             await _userManager.UpdateAsync(user);
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AssignRole(string id, string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(roleName))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                TempData["ErrorMessage"] = $"Role '{roleName}' does not exist.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            if (!await _userManager.IsInRoleAsync(user, roleName))
+            {
+                var result = await _userManager.AddToRoleAsync(user, roleName);
+                if (!result.Succeeded)
+                {
+                    TempData["ErrorMessage"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+            }
+
+            TempData["SuccessMessage"] = $"Assigned role '{roleName}' to {user.FullName}.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveRole(string id, string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(roleName))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            if (roleName == "Admin")
+            {
+                var adminUsers = await _userManager.GetUsersInRoleAsync("Admin");
+                if (adminUsers.Count <= 1 && adminUsers.Any(u => u.Id == id))
+                {
+                    TempData["ErrorMessage"] = "Cannot remove the last remaining Admin role.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+            }
+
+            if (await _userManager.IsInRoleAsync(user, roleName))
+            {
+                var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+                if (!result.Succeeded)
+                {
+                    TempData["ErrorMessage"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+            }
+
+            TempData["SuccessMessage"] = $"Removed role '{roleName}' from {user.FullName}.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LockUser(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.LockoutEnabled = true;
+            user.LockoutEnd = DateTimeOffset.MaxValue;
+            user.IsActive = false;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            TempData["SuccessMessage"] = $"{user.FullName} was locked successfully.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UnlockUser(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            user.LockoutEnd = null;
+            user.IsActive = true;
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                TempData["ErrorMessage"] = string.Join(" ", result.Errors.Select(e => e.Description));
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            TempData["SuccessMessage"] = $"{user.FullName} was unlocked successfully.";
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         // POST: Users/PayAllFines/5

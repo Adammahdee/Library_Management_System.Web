@@ -1,0 +1,86 @@
+@model Library_Management_System.Web.Models.BorrowTransaction
+
+@{
+    ViewData["Title"] = "Transaction Details";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <h1 class="h3 mb-4">Transaction Details</h1>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Borrower</dt>
+                <dd class="col-sm-9">@Model.User?.FullName (@Model.User?.Email)</dd>
+                <dt class="col-sm-3">Book</dt>
+                <dd class="col-sm-9">@Model.Book?.Title</dd>
+                <dt class="col-sm-3">Borrow Date</dt>
+                <dd class="col-sm-9">@Model.BorrowDate.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-sm-3">Due Date</dt>
+                <dd class="col-sm-9">@Model.DueDate.ToString("yyyy-MM-dd")</dd>
+                <dt class="col-sm-3">Return Date</dt>
+                <dd class="col-sm-9">@(Model.ReturnDate?.ToString("yyyy-MM-dd") ?? "Not returned")</dd>
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9">@Model.Status</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mt-4">
+        <div class="card-header">Fine Payments</div>
+        <div class="card-body">
+            @if (!Model.Fines.Any())
+            {
+                <p class="text-muted mb-0">No fines associated with this transaction.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Amount</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var fine in Model.Fines.OrderByDescending(f => f.CreatedAt))
+                            {
+                                <tr>
+                                    <td>@fine.Amount.ToString("C")</td>
+                                    <td>@fine.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                    <td>@(fine.IsPaid ? "Paid" : "Unpaid")</td>
+                                    <td class="text-end">
+                                        @if (!fine.IsPaid)
+                                        {
+                                            <form asp-action="PayFine" asp-route-fineId="@fine.FineId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="transactionId" value="@Model.TransactionId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-success">Mark Paid</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+        <a asp-action="History" class="btn btn-outline-dark">View History</a>
+    </div>
+</div>

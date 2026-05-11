@@ -30,10 +30,13 @@ var connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("DefaultConnection is not configured.");
 
+var mysqlServerVersion =
+    builder.Configuration["MySql:ServerVersion"] ?? "8.0.36";
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseMySql(
         connectionString,
-        ServerVersion.AutoDetect(connectionString)));
+        new MySqlServerVersion(Version.Parse(mysqlServerVersion))));
 
 var app = builder.Build();
 
@@ -62,5 +65,7 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     await IdentitySeeder.SeedRolesAndAdminAsync(services);
+    var dbContext = services.GetRequiredService<ApplicationDbContext>();
+    await LibrarySeeder.SeedSampleCatalogAsync(dbContext);
 }
 app.Run();

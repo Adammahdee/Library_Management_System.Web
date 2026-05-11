@@ -139,7 +139,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Author", b =>
@@ -157,7 +157,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasKey("AuthorId");
 
-                    b.ToTable("Authors");
+                    b.ToTable("Authors", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Book", b =>
@@ -199,7 +199,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("PublisherId");
 
-                    b.ToTable("Books");
+                    b.ToTable("Books", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.BookAuthor", b =>
@@ -214,7 +214,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("AuthorId");
 
-                    b.ToTable("BookAuthors");
+                    b.ToTable("BookAuthors", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.BorrowTransaction", b =>
@@ -252,7 +252,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("BorrowTransactions");
+                    b.ToTable("BorrowTransactions", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Category", b =>
@@ -270,7 +270,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Department", b =>
@@ -288,7 +288,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasKey("DepartmentId");
 
-                    b.ToTable("Departments");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Fine", b =>
@@ -318,7 +318,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("TransactionId");
 
-                    b.ToTable("Fines");
+                    b.ToTable("Fines", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Notification", b =>
@@ -353,7 +353,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Publisher", b =>
@@ -383,7 +383,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasKey("PublisherId");
 
-                    b.ToTable("Publishers");
+                    b.ToTable("Publishers", (string)null);
                 });
 
             modelBuilder.Entity("Library_Management_System.Web.Models.Reservation", b =>
@@ -418,7 +418,7 @@ namespace Library_Management_System.Web.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reservations");
+                    b.ToTable("Reservations", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

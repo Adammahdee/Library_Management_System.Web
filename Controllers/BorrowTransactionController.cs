@@ -1,6 +1,7 @@
 using Library_Management_System.Web.Data;
 using Library_Management_System.Web.Models;
 using Library_Management_System.Web.Services;
+using Library_Management_System.Web.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -16,11 +17,13 @@ namespace Library_Management_System.Web.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IBorrowService _borrowService;
+        private readonly IFineService _fineService;
 
-        public BorrowTransactionController(ApplicationDbContext context, IBorrowService borrowService)
+        public BorrowTransactionController(ApplicationDbContext context, IBorrowService borrowService, IFineService fineService)
         {
             _context = context;
             _borrowService = borrowService;
+            _fineService = fineService;
         }
 
         // GET: BorrowTransaction
@@ -28,11 +31,16 @@ namespace Library_Management_System.Web.Controllers
         [Route("Index")]
         public async Task<IActionResult> Index()
         {
-            var transactions = await _context.BorrowTransactions
-                .Include(bt => bt.User)
-                .Include(bt => bt.Book)
-                .OrderByDescending(bt => bt.BorrowDate)
-                .ToListAsync();
+            await _borrowService.RunOverdueAutomationAsync();
+            var transactions = await _borrowService.GetTransactionHistoryAsync();
+            return View(transactions);
+        }
+
+        [Route("History")]
+        public async Task<IActionResult> History()
+        {
+            await _borrowService.RunOverdueAutomationAsync();
+            var transactions = await _borrowService.GetTransactionHistoryAsync();
             return View(transactions);
         }
 
@@ -42,11 +50,7 @@ namespace Library_Management_System.Web.Controllers
         {
             if (id == null) return NotFound();
 
-            var transaction = await _context.BorrowTransactions
-                .Include(bt => bt.User)
-                .Include(bt => bt.Book)
-                .Include(bt => bt.Fines)
-                .FirstOrDefaultAsync(m => m.TransactionId == id);
+            var transaction = await _borrowService.GetTransactionByIdAsync(id.Value);
 
             if (transaction == null) return NotFound();
 
@@ -57,19 +61,30 @@ namespace Library_Management_System.Web.Controllers
         [Route("Checkout")]
         public async Task<IActionResult> Checkout()
         {
-            ViewBag.UserId = new SelectList(await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync(), "Id", "FullName");
-            ViewBag.BookId = new SelectList(await _context.Books.Where(b => b.AvailableCopies > 0).OrderBy(b => b.Title).ToListAsync(), "BookId", "Title");
-            return View(new BorrowTransaction { BorrowDate = DateTime.Today, DueDate = DateTime.Today.AddDays(14) });
+            var model = new BorrowTransaction
+            {
+                BorrowDate = DateTime.Today,
+                DueDate = DateTime.Today.AddDays(14),
+                Status = "Borrowed"
+            };
+
+            await PopulateFormDropdownsAsync(model.UserId, model.BookId, model.Status);
+            return View(model);
         }
 
         // GET: BorrowTransaction/Reserve
         [Route("Reserve")]
         public async Task<IActionResult> Reserve()
         {
-            ViewBag.UserId = new SelectList(await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync(), "Id", "FullName");
-            ViewBag.BookId = new SelectList(await _context.Books.Where(b => b.AvailableCopies > 0).OrderBy(b => b.Title).ToListAsync(), "BookId", "Title");
-            // Standard 3-day hold for reservations
-            return View("Checkout", new BorrowTransaction { BorrowDate = DateTime.Today, DueDate = DateTime.Today.AddDays(3), Status = "Reserved" });
+            var model = new BorrowTransaction
+            {
+                BorrowDate = DateTime.Today,
+                DueDate = DateTime.Today.AddDays(3),
+                Status = "Reserved"
+            };
+
+            await PopulateFormDropdownsAsync(model.UserId, model.BookId, model.Status);
+            return View("Checkout", model);
         }
 
         // POST: BorrowTransaction/Checkout
@@ -114,8 +129,104 @@ namespace Library_Management_System.Web.Controllers
                 ModelState.AddModelError("", "Unable to process checkout. Please check book availability.");
             }
 
-            ViewBag.UserId = new SelectList(await _context.Users.Where(u => u.IsActive).OrderBy(u => u.FullName).ToListAsync(), "Id", "FullName", transaction.UserId);
-            ViewBag.BookId = new SelectList(await _context.Books.Where(b => b.AvailableCopies > 0).OrderBy(b => b.Title).ToListAsync(), "BookId", "Title", transaction.BookId);
+            await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);
+            return View(transaction);
+        }
+
+        // GET: BorrowTransaction/Create
+        [Route("Create")]
+        public async Task<IActionResult> Create()
+        {
+            var model = new BorrowTransaction
+            {
+                BorrowDate = DateTime.Today,
+                DueDate = DateTime.Today.AddDays(14),
+                Status = "Borrowed"
+            };
+
+            await PopulateFormDropdownsAsync(model.UserId, model.BookId, model.Status);
+            return View(model);
+        }
+
+        // POST: BorrowTransaction/Create
+        [HttpPost]
+        [Route("Create")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(BorrowTransaction transaction)
+        {
+            if (transaction.DueDate <= transaction.BorrowDate)
+            {
+                ModelState.AddModelError(nameof(transaction.DueDate), "Due date must be after the borrow date.");
+            }
+
+            if (ModelState.IsValid && await _borrowService.CheckoutAsync(transaction))
+            {
+                TempData["SuccessMessage"] = "Borrow transaction created successfully.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (ModelState.IsValid)
+            {
+                ModelState.AddModelError(string.Empty, "Unable to create transaction. Verify book availability.");
+            }
+
+            await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);
+            return View(transaction);
+        }
+
+        // GET: BorrowTransaction/Edit/5
+        [Route("Edit/{id:int}")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var transaction = await _borrowService.GetTransactionByIdAsync(id);
+            if (transaction == null)
+            {
+                return NotFound();
+            }
+
+            await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);
+            return View(transaction);
+        }
+
+        // POST: BorrowTransaction/Edit/5
+        [HttpPost]
+        [Route("Edit/{id:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, BorrowTransaction transaction)
+        {
+            if (id != transaction.TransactionId)
+            {
+                return NotFound();
+            }
+
+            if (transaction.DueDate <= transaction.BorrowDate)
+            {
+                ModelState.AddModelError(nameof(transaction.DueDate), "Due date must be after the borrow date.");
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    var updated = await _borrowService.UpdateTransactionAsync(transaction);
+                    if (!updated)
+                    {
+                        return NotFound();
+                    }
+                    TempData["SuccessMessage"] = "Borrow transaction updated successfully.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!await _context.BorrowTransactions.AnyAsync(bt => bt.TransactionId == id))
+                    {
+                        return NotFound();
+                    }
+                    throw;
+                }
+            }
+
+            await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);
             return View(transaction);
         }
 
@@ -157,6 +268,52 @@ namespace Library_Management_System.Web.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [Route("PayFine/{fineId:int}")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayFine(int fineId, int? transactionId = null)
+        {
+            var paid = await _fineService.PayFineAsync(fineId);
+            if (!paid)
+            {
+                TempData["ErrorMessage"] = "Fine payment failed. Fine was not found.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = "Fine marked as paid successfully.";
+            }
+
+            if (transactionId.HasValue)
+            {
+                return RedirectToAction(nameof(Details), new { id = transactionId.Value });
+            }
+
+            return RedirectToAction(nameof(History));
+        }
+
+        private async Task PopulateFormDropdownsAsync(string? selectedUserId = null, int? selectedBookId = null, string? selectedStatus = null)
+        {
+            var users = await _context.Users
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.FullName)
+                .ToListAsync();
+
+            var books = await _context.Books
+                .OrderBy(b => b.Title)
+                .ToListAsync();
+
+            ViewBag.UserId = new SelectList(users, "Id", "FullName", selectedUserId);
+            ViewBag.BookId = new SelectList(books, "BookId", "Title", selectedBookId);
+            ViewBag.Status = new SelectList(
+                new[] { "Borrowed", "Reserved", "Returned", "Returned (Overdue)", "Cancelled", "Overdue" },
+                selectedStatus ?? "Borrowed");
+
+            if (!books.Any())
+            {
+                ViewBag.BookWarning = "No books found. Add at least one book before creating a borrow transaction.";
+            }
         }
     }
 }

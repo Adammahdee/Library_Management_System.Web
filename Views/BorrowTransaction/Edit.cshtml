@@ -1,0 +1,29 @@
+@model Library_Management_System.Web.Models.BorrowTransaction
+
+@{
+    ViewData["Title"] = "Edit Borrow Transaction";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <h1 class="h3 mb-4">Edit Borrow Transaction</h1>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="TransactionId" />
+                <partial name="_BorrowTransactionForm" model="Model" />
+
+                <div class="mt-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

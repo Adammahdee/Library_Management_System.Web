@@ -1,0 +1,62 @@
+@model IEnumerable<Library_Management_System.Web.Models.ApplicationUser>
+@using System.Collections.Generic
+
+@{
+    ViewData["Title"] = "Users";
+    Layout = "_AdminLayout";
+    var userRoles = ViewBag.UserRoles as Dictionary<string, IList<string>> ?? new Dictionary<string, IList<string>>();
+}
+
+<div class="container-fluid px-4 mt-4">
+    <h1 class="h3 mb-4">Users</h1>
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Department</th>
+                        <th>Roles</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        <tr>
+                            <td>@user.FullName</td>
+                            <td>@user.Email</td>
+                            <td>@(user.Department?.DepartmentName ?? "N/A")</td>
+                            <td>
+                                @{
+                                    userRoles.TryGetValue(user.Id, out var roles);
+                                    var roleText = roles != null && roles.Any() ? string.Join(", ", roles) : "No roles";
+                                }
+                                <span class="badge bg-info text-dark">@roleText</span>
+                            </td>
+                            <td>
+                                @if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
+                                {
+                                    <span class="badge bg-danger">Locked</span>
+                                }
+                                else if (user.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-outline-info">Details</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

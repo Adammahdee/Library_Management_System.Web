@@ -1,0 +1,59 @@
+@model IEnumerable<Library_Management_System.Web.Models.BorrowTransaction>
+
+@{
+    ViewData["Title"] = "Transaction History";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Transaction History</h1>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back to Circulation</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Borrower</th>
+                        <th>Book</th>
+                        <th>Borrow Date</th>
+                        <th>Due Date</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th>Unpaid Fine</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">No history records found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var tx in Model)
+                        {
+                            var unpaid = tx.Fines.Where(f => !f.IsPaid).Sum(f => f.Amount);
+                            <tr>
+                                <td>@tx.User?.FullName</td>
+                                <td>@tx.Book?.Title</td>
+                                <td>@tx.BorrowDate.ToString("yyyy-MM-dd")</td>
+                                <td>@tx.DueDate.ToString("yyyy-MM-dd")</td>
+                                <td>@(tx.ReturnDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                <td>@tx.Status</td>
+                                <td>@(unpaid > 0 ? unpaid.ToString("C") : "-")</td>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@tx.TransactionId" class="btn btn-sm btn-outline-info">Details</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
