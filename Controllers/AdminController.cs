@@ -111,6 +111,45 @@ namespace Library_Management_System.Web.Controllers
                 .Take(5)
                 .ToListAsync();
 
+            var mostBorrowedBooks = await _context.BorrowTransactions
+                .Where(t => t.BorrowDate >= thirtyDaysAgo && t.Book != null)
+                .GroupBy(t => t.Book!.Title)
+                .Select(g => new MostBorrowedBookViewModel
+                {
+                    Title = g.Key ?? "Unknown",
+                    BorrowCount = g.Count()
+                })
+                .OrderByDescending(x => x.BorrowCount)
+                .Take(5)
+                .ToListAsync();
+
+            var mostActiveUsers = await _context.BorrowTransactions
+                .Where(t => t.BorrowDate >= thirtyDaysAgo && t.User != null)
+                .GroupBy(t => new { t.User!.FullName, t.User!.Email })
+                .Select(g => new ActiveUserViewModel
+                {
+                    FullName = g.Key.FullName ?? "N/A",
+                    Email = g.Key.Email ?? "N/A",
+                    BorrowCount = g.Count()
+                })
+                .OrderByDescending(x => x.BorrowCount)
+                .Take(5)
+                .ToListAsync();
+
+            var overdueTrendRaw = await _context.BorrowTransactions
+                .Where(t => t.ReturnDate == null && t.DueDate < now && t.DueDate >= now.AddDays(-13))
+                .Select(t => t.DueDate.Date)
+                .ToListAsync();
+
+            var overdueTrend = Enumerable.Range(0, 14)
+                .Select(i => now.Date.AddDays(-13 + i))
+                .Select(date => new OverdueTrendPointViewModel
+                {
+                    DateLabel = date.ToString("MM-dd"),
+                    OverdueCount = overdueTrendRaw.Count(d => d <= date)
+                })
+                .ToList();
+
             var model = new DashboardViewModel
             {
                 TotalBooks = totalBooks,
@@ -123,17 +162,81 @@ namespace Library_Management_System.Web.Controllers
                 MonthlyFineRevenue = revenueData,
                 TopFineUsers = topFineUsers,
                 OverdueTransactions = overdueTransactions,
-                TopCategories = topCategories
+                TopCategories = topCategories,
+                MostBorrowedBooks = mostBorrowedBooks,
+                MostActiveUsers = mostActiveUsers,
+                OverdueTrend = overdueTrend
             };
 
             return View(model);
         }
 
-        public async Task<IActionResult> FineManagement()
+        public async Task<IActionResult> FineManagement(
+            string? search,
+            string status = "unpaid",
+            decimal? minAmount = null,
+            decimal? maxAmount = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            string sort = "created_desc",
+            int page = 1,
+            int pageSize = 10)
         {
-            var unpaidFines = await _fineService.GetUnpaidFinesAsync();
+            var fines = status == "paid"
+                ? await _fineService.GetPaidFinesAsync()
+                : await _fineService.GetUnpaidFinesAsync();
 
-            return View(unpaidFines);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLowerInvariant();
+                fines = fines.Where(f =>
+                        (f.BorrowTransaction.User?.FullName ?? string.Empty).ToLower().Contains(s) ||
+                        (f.BorrowTransaction.User?.Email ?? string.Empty).ToLower().Contains(s) ||
+                        (f.BorrowTransaction.Book?.Title ?? string.Empty).ToLower().Contains(s))
+                    .ToList();
+            }
+
+            if (minAmount.HasValue) fines = fines.Where(f => f.Amount >= minAmount.Value).ToList();
+            if (maxAmount.HasValue) fines = fines.Where(f => f.Amount <= maxAmount.Value).ToList();
+            if (fromDate.HasValue) fines = fines.Where(f => f.CreatedAt.Date >= fromDate.Value.Date).ToList();
+            if (toDate.HasValue) fines = fines.Where(f => f.CreatedAt.Date <= toDate.Value.Date).ToList();
+
+            fines = sort switch
+            {
+                "amount_asc" => fines.OrderBy(f => f.Amount).ToList(),
+                "amount_desc" => fines.OrderByDescending(f => f.Amount).ToList(),
+                "created_asc" => fines.OrderBy(f => f.CreatedAt).ToList(),
+                _ => fines.OrderByDescending(f => f.CreatedAt).ToList()
+            };
+
+            var totalItems = fines.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+            page = Math.Clamp(page, 1, totalPages);
+            var paged = fines.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            var model = new FineManagementViewModel
+            {
+                Fines = paged,
+                Search = search,
+                Status = status,
+                MinAmount = minAmount,
+                MaxAmount = maxAmount,
+                FromDate = fromDate,
+                ToDate = toDate,
+                Sort = sort,
+                Page = page,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            };
+
+            return View(model);
+        }
+
+        public async Task<IActionResult> ReceiptHistory()
+        {
+            var paidFines = await _fineService.GetPaidFinesAsync();
+            return View(paidFines);
         }
 
         public async Task<IActionResult> AuditLogs()

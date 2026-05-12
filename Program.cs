@@ -15,6 +15,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IBorrowService, BorrowService>();
 builder.Services.AddScoped<Library_Management_System.Web.Services.Interfaces.IFineService, FineService>();
+builder.Services.AddHostedService<OverdueMonitorHostedService>();
 
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()

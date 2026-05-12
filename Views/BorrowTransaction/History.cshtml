@@ -3,6 +3,13 @@
 @{
     ViewData["Title"] = "Transaction History";
     Layout = "_AdminLayout";
+    var search = ViewBag.Search as string;
+    var status = ViewBag.Status as string;
+    var sort = ViewBag.Sort as string ?? "borrow_desc";
+    int page = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    var statusOptions = ViewBag.StatusOptions as List<string> ?? new List<string>();
 }
 
 <div class="container-fluid px-4 mt-4">
@@ -11,49 +18,55 @@
         <a asp-action="Index" class="btn btn-outline-secondary">Back to Circulation</a>
     </div>
 
+    <form method="get" class="card shadow-sm border-0 mb-3">
+        <div class="card-body row g-2">
+            <div class="col-md-4"><input class="form-control" name="search" value="@search" placeholder="Search borrower/book/email" /></div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All statuses</option>
+                    @foreach (var s in statusOptions) { <option value="@s" selected="@(status == s)">@s</option> }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="sort">
+                    <option value="borrow_desc" selected="@(sort=="borrow_desc")">Borrow Date Desc</option>
+                    <option value="borrow_asc" selected="@(sort=="borrow_asc")">Borrow Date Asc</option>
+                    <option value="due_desc" selected="@(sort=="due_desc")">Due Date Desc</option>
+                    <option value="due_asc" selected="@(sort=="due_asc")">Due Date Asc</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid"><button class="btn btn-primary" type="submit">Apply</button></div>
+        </div>
+    </form>
+
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table table-striped mb-0">
-                <thead>
-                    <tr>
-                        <th>Borrower</th>
-                        <th>Book</th>
-                        <th>Borrow Date</th>
-                        <th>Due Date</th>
-                        <th>Return Date</th>
-                        <th>Status</th>
-                        <th>Unpaid Fine</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Borrower</th><th>Book</th><th>Borrow Date</th><th>Due Date</th><th>Return Date</th><th>Status</th><th>Unpaid Fine</th><th class="text-end">Actions</th></tr></thead>
                 <tbody>
-                    @if (!Model.Any())
-                    {
-                        <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">No history records found.</td>
-                        </tr>
-                    }
+                    @if (!Model.Any()) { <tr><td colspan="8" class="text-center py-4 text-muted">No history records found.</td></tr> }
                     else
                     {
                         foreach (var tx in Model)
                         {
                             var unpaid = tx.Fines.Where(f => !f.IsPaid).Sum(f => f.Amount);
                             <tr>
-                                <td>@tx.User?.FullName</td>
-                                <td>@tx.Book?.Title</td>
-                                <td>@tx.BorrowDate.ToString("yyyy-MM-dd")</td>
-                                <td>@tx.DueDate.ToString("yyyy-MM-dd")</td>
-                                <td>@(tx.ReturnDate?.ToString("yyyy-MM-dd") ?? "-")</td>
-                                <td>@tx.Status</td>
-                                <td>@(unpaid > 0 ? unpaid.ToString("C") : "-")</td>
-                                <td class="text-end">
-                                    <a asp-action="Details" asp-route-id="@tx.TransactionId" class="btn btn-sm btn-outline-info">Details</a>
-                                </td>
+                                <td>@tx.User?.FullName</td><td>@tx.Book?.Title</td><td>@tx.BorrowDate.ToString("yyyy-MM-dd")</td><td>@tx.DueDate.ToString("yyyy-MM-dd")</td><td>@(tx.ReturnDate?.ToString("yyyy-MM-dd") ?? "-")</td><td>@tx.Status</td><td>@(unpaid > 0 ? unpaid.ToString("C") : "-")</td>
+                                <td class="text-end"><a asp-action="Details" asp-route-id="@tx.TransactionId" class="btn btn-sm btn-outline-info">Details</a></td>
                             </tr>
                         }
                     }
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Total: @totalItems</small>
+        <div class="btn-group btn-group-sm">
+            <a class="btn btn-outline-secondary @(ViewBag.CurrentPage <= 1 ? "disabled" : "")" asp-action="History" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-search="@search" asp-route-status="@status" asp-route-sort="@sort">Prev</a>
+            <span class="btn btn-light disabled">Page @(ViewBag.CurrentPage) / @(ViewBag.TotalPages)</span>
+            <a class="btn btn-outline-secondary @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")" asp-action="History" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-search="@search" asp-route-status="@status" asp-route-sort="@sort">Next</a>
         </div>
     </div>
 </div>

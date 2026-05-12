@@ -15,6 +15,9 @@ namespace Library_Management_System.Web.Models.ViewModels
         public List<UserFineSummaryViewModel> TopFineUsers { get; set; } = new();
         public List<OverdueTransactionViewModel> OverdueTransactions { get; set; } = new();
         public List<MostBorrowedCategoryViewModel> TopCategories { get; set; } = new();
+        public List<MostBorrowedBookViewModel> MostBorrowedBooks { get; set; } = new();
+        public List<ActiveUserViewModel> MostActiveUsers { get; set; } = new();
+        public List<OverdueTrendPointViewModel> OverdueTrend { get; set; } = new();
     }
 
     public class MonthlyRevenueViewModel
@@ -42,5 +45,24 @@ namespace Library_Management_System.Web.Models.ViewModels
     {
         public string CategoryName { get; set; } = string.Empty;
         public int BorrowCount { get; set; }
+    }
+
+    public class MostBorrowedBookViewModel
+    {
+        public string Title { get; set; } = string.Empty;
+        public int BorrowCount { get; set; }
+    }
+
+    public class ActiveUserViewModel
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public int BorrowCount { get; set; }
+    }
+
+    public class OverdueTrendPointViewModel
+    {
+        public string DateLabel { get; set; } = string.Empty;
+        public int OverdueCount { get; set; }
     }
 }

@@ -37,11 +37,48 @@ namespace Library_Management_System.Web.Controllers
         }
 
         [Route("History")]
-        public async Task<IActionResult> History()
+        public async Task<IActionResult> History(string? search, string? status, string sort = "borrow_desc", int page = 1, int pageSize = 10)
         {
             await _borrowService.RunOverdueAutomationAsync();
             var transactions = await _borrowService.GetTransactionHistoryAsync();
-            return View(transactions);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLowerInvariant();
+                transactions = transactions.Where(t =>
+                        (t.User?.FullName ?? string.Empty).ToLower().Contains(s) ||
+                        (t.User?.Email ?? string.Empty).ToLower().Contains(s) ||
+                        (t.Book?.Title ?? string.Empty).ToLower().Contains(s))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                transactions = transactions.Where(t => t.Status == status).ToList();
+            }
+
+            transactions = sort switch
+            {
+                "due_asc" => transactions.OrderBy(t => t.DueDate).ToList(),
+                "due_desc" => transactions.OrderByDescending(t => t.DueDate).ToList(),
+                "borrow_asc" => transactions.OrderBy(t => t.BorrowDate).ToList(),
+                _ => transactions.OrderByDescending(t => t.BorrowDate).ToList()
+            };
+
+            var totalItems = transactions.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+            page = Math.Clamp(page, 1, totalPages);
+            var paged = transactions.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+
+            ViewBag.Search = search;
+            ViewBag.Status = status;
+            ViewBag.Sort = sort;
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalItems = totalItems;
+            ViewBag.StatusOptions = transactions.Select(t => t.Status).Distinct().OrderBy(s => s).ToList();
+
+            return View(paged);
         }
 
         // GET: BorrowTransaction/Details/5

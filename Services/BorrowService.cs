@@ -138,13 +138,57 @@ namespace Library_Management_System.Web.Services
         {
             var now = DateTime.Now;
             var overdueTransactions = await _context.BorrowTransactions
+                .Include(bt => bt.Book)
                 .Where(bt => bt.ReturnDate == null && bt.DueDate < now && bt.Status != "Overdue")
                 .ToListAsync();
 
             foreach (var transaction in overdueTransactions)
             {
                 await _fineService.EnsureOverdueFineAsync(transaction, now, updateOpenLoanStatus: true);
+                var alreadyNotified = await _context.Notifications.AnyAsync(n =>
+                    n.UserId == transaction.UserId &&
+                    n.Title == "Overdue Reminder" &&
+                    n.CreatedAt.Date == now.Date);
+
+                if (!alreadyNotified)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = transaction.UserId,
+                        Title = "Overdue Reminder",
+                        Message = $"Your borrowed book '{transaction.Book?.Title}' is overdue. Please return it as soon as possible.",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
             }
+
+            var dueSoon = await _context.BorrowTransactions
+                .Include(bt => bt.Book)
+                .Where(bt => bt.ReturnDate == null && bt.DueDate.Date == now.Date.AddDays(1))
+                .ToListAsync();
+
+            foreach (var transaction in dueSoon)
+            {
+                var alreadyNotified = await _context.Notifications.AnyAsync(n =>
+                    n.UserId == transaction.UserId &&
+                    n.Title == "Return Reminder" &&
+                    n.CreatedAt.Date == now.Date);
+
+                if (!alreadyNotified)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = transaction.UserId,
+                        Title = "Return Reminder",
+                        Message = $"Reminder: '{transaction.Book?.Title}' is due tomorrow ({transaction.DueDate:yyyy-MM-dd}).",
+                        IsRead = false,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
 
             return overdueTransactions.Count;
         }

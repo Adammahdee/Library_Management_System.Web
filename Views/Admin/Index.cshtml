@@ -227,6 +227,63 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-primary">Most Borrowed Books (30 Days)</h6></div>
+                <div class="card-body">
+                    @if (!Model.MostBorrowedBooks.Any())
+                    {
+                        <div class="text-muted small">No data available.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var b in Model.MostBorrowedBooks)
+                            {
+                                <li class="list-group-item d-flex justify-content-between px-0"><span>@b.Title</span><span class="badge bg-primary rounded-pill">@b.BorrowCount</span></li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-primary">Most Active Users (30 Days)</h6></div>
+                <div class="card-body">
+                    @if (!Model.MostActiveUsers.Any())
+                    {
+                        <div class="text-muted small">No data available.</div>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var u in Model.MostActiveUsers)
+                            {
+                                <li class="list-group-item d-flex justify-content-between px-0">
+                                    <span><strong>@u.FullName</strong><br /><small class="text-muted">@u.Email</small></span>
+                                    <span class="badge bg-success rounded-pill">@u.BorrowCount</span>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-2">
+        <div class="col-lg-12">
+            <div class="card shadow-sm border-0 mb-5">
+                <div class="card-header bg-white py-3"><h6 class="m-0 fw-bold text-danger">Overdue Trend (14 Days)</h6></div>
+                <div class="card-body">
+                    <canvas id="overdueTrendChart" height="90"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
@@ -265,6 +322,28 @@
                     plugins: {
                         legend: { display: false }
                     }
+                }
+            });
+
+            const overdueCtx = document.getElementById('overdueTrendChart').getContext('2d');
+            const overdueLabels = @Html.Raw(Json.Serialize(Model.OverdueTrend.Select(x => x.DateLabel)));
+            const overdueData = @Html.Raw(Json.Serialize(Model.OverdueTrend.Select(x => x.OverdueCount)));
+            new Chart(overdueCtx, {
+                type: 'bar',
+                data: {
+                    labels: overdueLabels,
+                    datasets: [{
+                        label: 'Overdue Items',
+                        data: overdueData,
+                        backgroundColor: 'rgba(220, 53, 69, 0.45)',
+                        borderColor: '#dc3545',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { y: { beginAtZero: true, precision: 0 } },
+                    plugins: { legend: { display: false } }
                 }
             });
         });

@@ -1,0 +1,32 @@
+@model IEnumerable<Library_Management_System.Web.Models.Fine>
+@{
+    ViewData["Title"] = "Fine Receipt History";
+    Layout = "_AdminLayout";
+}
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between mb-3">
+        <h1 class="h3">Fine Receipt History</h1>
+        <a asp-action="FineManagement" class="btn btn-outline-secondary">Back to Fine Management</a>
+    </div>
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead><tr><th>Paid Date</th><th>Borrower</th><th>Book</th><th>Amount</th><th>Transaction</th></tr></thead>
+                <tbody>
+                @if (!Model.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">No receipts found.</td></tr> }
+                else {
+                    foreach (var f in Model) {
+                        <tr>
+                            <td>@f.CreatedAt.ToString("yyyy-MM-dd")</td>
+                            <td>@f.BorrowTransaction.User?.FullName</td>
+                            <td>@f.BorrowTransaction.Book?.Title</td>
+                            <td>@f.Amount.ToString("C")</td>
+                            <td>#@f.TransactionId</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

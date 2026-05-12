@@ -78,6 +78,27 @@
         </div>
     </div>
 
+    <div id="globalLoading" class="position-fixed top-0 start-0 w-100 h-100 d-none" style="background: rgba(255,255,255,.6); z-index: 2000;">
+        <div class="d-flex w-100 h-100 justify-content-center align-items-center">
+            <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 3000;">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="toast align-items-center text-bg-success border-0 show" role="alert">
+                <div class="d-flex"><div class="toast-body">@TempData["SuccessMessage"]</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="toast align-items-center text-bg-danger border-0 show" role="alert">
+                <div class="d-flex"><div class="toast-body">@TempData["ErrorMessage"]</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>
+            </div>
+        }
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -85,6 +106,22 @@
         $("#menu-toggle").click(function(e) {
             e.preventDefault();
             $("#wrapper").toggleClass("toggled");
+        });
+
+        document.addEventListener("submit", function (e) {
+            const form = e.target;
+            if (form && form.tagName === "FORM") {
+                document.getElementById("globalLoading")?.classList.remove("d-none");
+            }
+        });
+
+        document.querySelectorAll("[data-confirm]").forEach(function (el) {
+            el.addEventListener("click", function (ev) {
+                const message = el.getAttribute("data-confirm");
+                if (message && !confirm(message)) {
+                    ev.preventDefault();
+                }
+            });
         });
     </script>
     @await RenderSectionAsync("Scripts", required: false)

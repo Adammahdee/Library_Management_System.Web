@@ -48,6 +48,18 @@ namespace Library_Management_System.Web.Services
                 .ToListAsync();
         }
 
+        public async Task<List<Fine>> GetPaidFinesAsync()
+        {
+            return await _context.Fines
+                .Include(f => f.BorrowTransaction)
+                    .ThenInclude(bt => bt.User)
+                .Include(f => f.BorrowTransaction)
+                    .ThenInclude(bt => bt.Book)
+                .Where(f => f.IsPaid)
+                .OrderByDescending(f => f.CreatedAt)
+                .ToListAsync();
+        }
+
         public async Task<decimal> EnsureOverdueFineAsync(BorrowTransaction transaction, DateTime effectiveDate, bool updateOpenLoanStatus)
         {
             var effectiveDueDate = transaction.DueDate.Date.AddDays(_graceDays);

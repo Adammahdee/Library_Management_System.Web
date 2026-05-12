@@ -182,6 +182,16 @@ namespace Library_Management_System.Web.Controllers
                 var book = await _context.Books.Include(b => b.BookAuthors).FirstOrDefaultAsync(b => b.BookId == id);
                 if (book == null) return NotFound();
 
+                var normalizedIsbn = model.ISBN?.Trim() ?? string.Empty;
+                if (await _context.Books.AnyAsync(b => b.BookId != id && b.ISBN == normalizedIsbn))
+                {
+                    ModelState.AddModelError(nameof(model.ISBN), "A different book with this ISBN already exists.");
+                    ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.CategoryName).ToListAsync(), "CategoryId", "CategoryName", model.CategoryId);
+                    ViewBag.PublisherId = new SelectList(await _context.Publishers.OrderBy(p => p.PublisherName).ToListAsync(), "PublisherId", "PublisherName", model.PublisherId);
+                    ViewBag.Authors = new MultiSelectList(await _context.Authors.OrderBy(a => a.AuthorName).ToListAsync(), "AuthorId", "AuthorName", book.BookAuthors.Select(ba => ba.AuthorId).ToArray());
+                    return View(model);
+                }
+
                 // Logic Error Fix: Calculate the change in total quantity to adjust availability correctly.
                 // Do not rely on hidden fields for AvailableCopies as they can be tampered with or become stale.
                 int quantityDelta = model.Quantity - book.TotalCopies;
@@ -197,7 +207,7 @@ namespace Library_Management_System.Web.Controllers
                 }
 
                 book.Title = model.Title;
-                book.ISBN = model.ISBN;
+                book.ISBN = normalizedIsbn;
                 book.TotalCopies = model.Quantity;
                 book.AvailableCopies += quantityDelta;
                 book.CategoryId = model.CategoryId;
@@ -212,8 +222,15 @@ namespace Library_Management_System.Web.Controllers
                     }
                 }
 
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    ModelState.AddModelError(string.Empty, "This book was modified by another user. Please reload and try again.");
+                }
             }
             return View(model);
         }
@@ -225,8 +242,17 @@ namespace Library_Management_System.Web.Controllers
             var book = await _context.Books.FindAsync(id);
             if (book != null)
             {
+                var hasActiveTransactions = await _context.BorrowTransactions
+                    .AnyAsync(t => t.BookId == id && t.ReturnDate == null);
+                if (hasActiveTransactions)
+                {
+                    TempData["ErrorMessage"] = "Cannot delete a book with active borrow transactions.";
+                    return RedirectToAction(nameof(Index));
+                }
+
                 _context.Books.Remove(book);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Book deleted successfully.";
             }
             return RedirectToAction(nameof(Index));
         }

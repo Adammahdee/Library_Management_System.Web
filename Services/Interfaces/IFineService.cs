@@ -9,6 +9,7 @@ namespace Library_Management_System.Web.Services.Interfaces
         Task<List<Fine>> GetAllFinesAsync();
 
         Task<List<Fine>> GetUnpaidFinesAsync();
+        Task<List<Fine>> GetPaidFinesAsync();
 
         Task<decimal> EnsureOverdueFineAsync(BorrowTransaction transaction, DateTime effectiveDate, bool updateOpenLoanStatus);
 

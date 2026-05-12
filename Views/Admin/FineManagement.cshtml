@@ -1,4 +1,4 @@
-@model IEnumerable<Library_Management_System.Web.Models.Fine>
+@model Library_Management_System.Web.Models.ViewModels.FineManagementViewModel
 
 @{
     ViewData["Title"] = "Fine Management";
@@ -8,64 +8,72 @@
 <div class="container-fluid px-4">
     <div class="d-flex align-items-center justify-content-between mb-4 mt-4">
         <h1 class="h3 mb-0 text-dark fw-bold">Fine Management</h1>
-        <a asp-action="Index" class="btn btn-outline-secondary btn-sm shadow-sm">
-            <i class="fas fa-arrow-left fa-sm me-1"></i> Back to Dashboard
-        </a>
+        <div>
+            <a asp-action="ReceiptHistory" class="btn btn-outline-dark btn-sm shadow-sm me-2">Receipt History</a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm shadow-sm">Back to Dashboard</a>
+        </div>
     </div>
+
+    <form method="get" class="card shadow-sm border-0 mb-3">
+        <div class="card-body row g-2">
+            <div class="col-md-3"><input class="form-control" name="search" value="@Model.Search" placeholder="Search borrower/book" /></div>
+            <div class="col-md-2">
+                <select class="form-select" name="status">
+                    <option value="unpaid" selected="@(Model.Status=="unpaid")">Unpaid</option>
+                    <option value="paid" selected="@(Model.Status=="paid")">Paid</option>
+                </select>
+            </div>
+            <div class="col-md-2"><input class="form-control" name="minAmount" value="@Model.MinAmount" placeholder="Min amount" /></div>
+            <div class="col-md-2"><input class="form-control" name="maxAmount" value="@Model.MaxAmount" placeholder="Max amount" /></div>
+            <div class="col-md-3 d-flex gap-2">
+                <select class="form-select" name="sort">
+                    <option value="created_desc" selected="@(Model.Sort=="created_desc")">Newest</option>
+                    <option value="created_asc" selected="@(Model.Sort=="created_asc")">Oldest</option>
+                    <option value="amount_desc" selected="@(Model.Sort=="amount_desc")">Amount Desc</option>
+                    <option value="amount_asc" selected="@(Model.Sort=="amount_asc")">Amount Asc</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Apply</button>
+            </div>
+        </div>
+    </form>
 
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show shadow-sm border-0 mb-4" role="alert">
-            <i class="fas fa-check-circle me-2"></i> @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
     }
 
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3 border-bottom">
-            <h6 class="m-0 fw-bold text-primary">Outstanding Unpaid Fines</h6>
-        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
                         <tr class="small text-uppercase text-muted">
-                            <th class="ps-4">Borrower</th>
-                            <th>Book Title</th>
-                            <th>Amount</th>
-                            <th>Generated Date</th>
-                            <th class="text-end pe-4">Actions</th>
+                            <th class="ps-4">Borrower</th><th>Book Title</th><th>Amount</th><th>Generated Date</th><th>Status</th><th class="text-end pe-4">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if (!Model.Any())
+                        @if (!Model.Fines.Any())
                         {
-                            <tr>
-                                <td colspan="5" class="text-center py-5 text-muted">
-                                    No outstanding fines found.
-                                </td>
-                            </tr>
+                            <tr><td colspan="6" class="text-center py-5 text-muted">No fines found.</td></tr>
                         }
                         else
                         {
-                            foreach (var item in Model)
+                            foreach (var item in Model.Fines)
                             {
                                 <tr>
-                                    <td class="ps-4">
-                                        <div class="fw-bold">@item.BorrowTransaction.User?.FullName</div>
-                                        <div class="small text-muted">@item.BorrowTransaction.User?.Email</div>
-                                    </td>
+                                    <td class="ps-4"><div class="fw-bold">@item.BorrowTransaction.User?.FullName</div><div class="small text-muted">@item.BorrowTransaction.User?.Email</div></td>
                                     <td>@item.BorrowTransaction.Book?.Title</td>
-                                    <td class="fw-bold text-danger">@item.Amount.ToString("C")</td>
+                                    <td class="fw-bold @(item.IsPaid ? "text-success" : "text-danger")">@item.Amount.ToString("C")</td>
                                     <td class="small text-muted">@item.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                                    <td><span class="badge @(item.IsPaid ? "bg-success" : "bg-warning text-dark")">@(item.IsPaid ? "Paid" : "Unpaid")</span></td>
                                     <td class="text-end pe-4">
-                                        <form asp-action="MarkPaid" asp-route-id="@item.FineId" method="post" 
-                                              onsubmit="return confirm('Mark this fine as paid?');">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-success">
-                                                <i class="fas fa-check me-1"></i> Mark as Paid
-                                            </button>
-                                        </form>
+                                        @if (!item.IsPaid)
+                                        {
+                                            <form asp-action="MarkPaid" asp-route-id="@item.FineId" method="post" onsubmit="return confirm('Mark this fine as paid?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-success"><i class="fas fa-check me-1"></i>Mark as Paid</button>
+                                            </form>
+                                        }
                                     </td>
                                 </tr>
                             }
@@ -73,6 +81,15 @@
                     </tbody>
                 </table>
             </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <small class="text-muted">Total: @Model.TotalItems</small>
+        <div class="btn-group btn-group-sm">
+            <a class="btn btn-outline-secondary @(Model.Page <= 1 ? "disabled" : "")" asp-action="FineManagement" asp-route-page="@(Model.Page-1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-minAmount="@Model.MinAmount" asp-route-maxAmount="@Model.MaxAmount">Prev</a>
+            <span class="btn btn-light disabled">Page @Model.Page / @Model.TotalPages</span>
+            <a class="btn btn-outline-secondary @(Model.Page >= Model.TotalPages ? "disabled" : "")" asp-action="FineManagement" asp-route-page="@(Model.Page+1)" asp-route-search="@Model.Search" asp-route-status="@Model.Status" asp-route-sort="@Model.Sort" asp-route-minAmount="@Model.MinAmount" asp-route-maxAmount="@Model.MaxAmount">Next</a>
         </div>
     </div>
 </div>
