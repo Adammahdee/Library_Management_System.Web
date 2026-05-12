@@ -66,8 +66,8 @@ namespace Library_Management_System.Web.Controllers
             // Section 3: Fine revenue
             var lastSixMonths = now.AddMonths(-5);
             var monthlyRevenueRows = await _context.Fines
-                .Where(f => f.IsPaid && f.CreatedAt >= new DateTime(lastSixMonths.Year, lastSixMonths.Month, 1))
-                .GroupBy(f => new { f.CreatedAt.Year, f.CreatedAt.Month })
+                .Where(f => f.IsPaid && f.PaidAt != null && f.PaidAt >= new DateTime(lastSixMonths.Year, lastSixMonths.Month, 1))
+                .GroupBy(f => new { Year = f.PaidAt!.Value.Year, Month = f.PaidAt!.Value.Month })
                 .Select(g => new
                 {
                     Year = g.Key.Year,
@@ -206,6 +206,9 @@ namespace Library_Management_System.Web.Controllers
                 "amount_asc" => fines.OrderBy(f => f.Amount).ToList(),
                 "amount_desc" => fines.OrderByDescending(f => f.Amount).ToList(),
                 "created_asc" => fines.OrderBy(f => f.CreatedAt).ToList(),
+                "paid_asc" => fines.OrderBy(f => f.PaidAt).ToList(),
+                "paid_desc" => fines.OrderByDescending(f => f.PaidAt).ToList(),
+                _ when status == "paid" && sort == "created_desc" => fines.OrderByDescending(f => f.PaidAt).ToList(),
                 _ => fines.OrderByDescending(f => f.CreatedAt).ToList()
             };
 

@@ -20,6 +20,8 @@ namespace Library_Management_System.Web.Models
         [Display(Name = "Paid Status")]
         public bool IsPaid { get; set; } = false;
 
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? PaidAt { get; set; }
     }
 }

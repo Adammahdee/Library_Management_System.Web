@@ -40,13 +40,25 @@ namespace Library_Management_System.Web.Data
             {
                 if (entry.Entity is AuditLog) continue;
 
+                var entityName = entry.Entity.GetType().Name;
+                var description = $"Changed {entityName}";
+
+                // P1 Remediation: Automatically capture PaidAt changes on Fines
+                if (entry.Entity is Fine fine && entry.State == EntityState.Modified)
+                {
+                    if (entry.Property(nameof(Fine.PaidAt)).IsModified)
+                    {
+                        description = $"Fine payment status updated. FineId: {fine.FineId}, Amount: {fine.Amount:F2}, PaidAt: {fine.PaidAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A"}";
+                    }
+                }
+
                 var log = new AuditLog
                 {
-                    TableName = entry.Entity.GetType().Name,
+                    TableName = entityName,
                     ActionType = entry.State.ToString(),
                     LogDate = DateTime.UtcNow,
                     UserId = userId,
-                    Description = $"Changed {entry.Entity.GetType().Name}"
+                    Description = description
                 };
 
                 // Optionally capture primary key or specific field changes here

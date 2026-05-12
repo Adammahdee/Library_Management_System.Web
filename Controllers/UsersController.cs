@@ -192,6 +192,11 @@ namespace Library_Management_System.Web.Controllers
                 .OrderByDescending(a => a.LogDate)
                 .Take(50)
                 .ToListAsync();
+            ViewBag.PaymentHistory = user.BorrowTransactions
+                .SelectMany(bt => bt.Fines)
+                .Where(f => f.IsPaid)
+                .OrderByDescending(f => f.PaidAt)
+                .ToList();
 
             return View(user);
         }
@@ -545,9 +550,11 @@ namespace Library_Management_System.Web.Controllers
 
             if (unpaidFines.Any())
             {
+                var now = DateTime.UtcNow;
                 foreach (var fine in unpaidFines)
                 {
                     fine.IsPaid = true;
+                    fine.PaidAt = now;
                 }
 
                 await _context.SaveChangesAsync();
@@ -555,6 +562,40 @@ namespace Library_Management_System.Web.Controllers
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadReceipt(int fineId)
+        {
+            var fine = await _context.Fines
+                .Include(f => f.BorrowTransaction)
+                    .ThenInclude(bt => bt.User)
+                .Include(f => f.BorrowTransaction)
+                    .ThenInclude(bt => bt.Book)
+                .FirstOrDefaultAsync(f => f.FineId == fineId && f.IsPaid);
+
+            if (fine == null) return NotFound();
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("-------------------------------------------");
+            sb.AppendLine("         LIBRARY PAYMENT RECEIPT           ");
+            sb.AppendLine("-------------------------------------------");
+            sb.AppendLine($"Receipt No:    REC-{fine.FineId:D6}");
+            sb.AppendLine($"Payment Date:  {fine.PaidAt?.ToLocalTime().ToString("MMM dd, yyyy HH:mm") ?? "N/A"}");
+            sb.AppendLine($"User:          {fine.BorrowTransaction.User?.FullName}");
+            sb.AppendLine($"Email:         {fine.BorrowTransaction.User?.Email}");
+            sb.AppendLine("-------------------------------------------");
+            sb.AppendLine("Details:");
+            sb.AppendLine($"Book Title:    {fine.BorrowTransaction.Book?.Title}");
+            sb.AppendLine($"Transaction ID: #{fine.TransactionId}");
+            sb.AppendLine($"Fine Amount:   {fine.Amount:C}");
+            sb.AppendLine("-------------------------------------------");
+            sb.AppendLine("Status:        PAID");
+            sb.AppendLine("-------------------------------------------");
+            sb.AppendLine("Thank you for your payment!");
+
+            var fileName = $"Receipt_Fine_{fine.FineId}.txt";
+            return File(System.Text.Encoding.UTF8.GetBytes(sb.ToString()), "text/plain", fileName);
         }
 
         private static IReadOnlyList<string> GetAllowedRoles()

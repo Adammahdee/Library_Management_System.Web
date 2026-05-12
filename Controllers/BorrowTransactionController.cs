@@ -73,7 +73,7 @@ namespace Library_Management_System.Web.Controllers
             ViewBag.Search = search;
             ViewBag.Status = status;
             ViewBag.Sort = sort;
-            ViewBag.Page = page;
+            ViewBag.CurrentPage = page;
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalItems = totalItems;
             ViewBag.StatusOptions = transactions.Select(t => t.Status).Distinct().OrderBy(s => s).ToList();
@@ -158,12 +158,13 @@ namespace Library_Management_System.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                if (await _borrowService.CheckoutAsync(transaction))
+                var (success, error) = await _borrowService.CheckoutAsync(transaction);
+                if (success)
                 {
                     TempData["SuccessMessage"] = transaction.Status == "Reserved" ? "Book reserved successfully!" : "Book checked out successfully!";
                     return RedirectToAction(nameof(Index));
                 }
-                ModelState.AddModelError("", "Unable to process checkout. Please check book availability.");
+                ModelState.AddModelError(string.Empty, error ?? "Unable to process checkout. Please check book availability.");
             }
 
             await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);
@@ -196,15 +197,16 @@ namespace Library_Management_System.Web.Controllers
                 ModelState.AddModelError(nameof(transaction.DueDate), "Due date must be after the borrow date.");
             }
 
-            if (ModelState.IsValid && await _borrowService.CheckoutAsync(transaction))
-            {
-                TempData["SuccessMessage"] = "Borrow transaction created successfully.";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (ModelState.IsValid)
             {
-                ModelState.AddModelError(string.Empty, "Unable to create transaction. Verify book availability.");
+                var (success, error) = await _borrowService.CheckoutAsync(transaction);
+                if (success)
+                {
+                    TempData["SuccessMessage"] = "Borrow transaction created successfully.";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                ModelState.AddModelError(string.Empty, error ?? "Unable to create transaction. Verify book availability.");
             }
 
             await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);

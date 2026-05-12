@@ -26,6 +26,11 @@ namespace Library_Management_System.Web.Services
                 .ToListAsync();
         }
 
+        public async Task<List<BorrowTransaction>> GetAllTransactionsAsync()
+        {
+            return await GetTransactionHistoryAsync();
+        }
+
         public async Task<BorrowTransaction?> GetTransactionByIdAsync(int transactionId)
         {
             return await _context.BorrowTransactions
@@ -73,12 +78,26 @@ namespace Library_Management_System.Web.Services
             return 0m;
         }
 
-        public async Task<bool> CheckoutAsync(BorrowTransaction transaction)
+        public async Task<(bool success, string? errorMessage)> CheckoutAsync(BorrowTransaction transaction)
         {
-            var book = await _context.Books.FindAsync(transaction.BookId);
-            if (book == null || book.AvailableCopies <= 0)
+            // P1 Requirement: Borrow limit enforcement
+            // Count active borrows (Status == "Borrowed" or "Overdue")
+            int activeCount = await GetActiveBorrowCountAsync(transaction.UserId);
+            
+            if (activeCount >= 5)
             {
-                return false;
+                return (false, "User has reached the maximum limit of 5 active borrows.");
+            }
+
+            var book = await _context.Books.FindAsync(transaction.BookId);
+            if (book == null)
+            {
+                return (false, "The selected book was not found.");
+            }
+
+            if (book.AvailableCopies <= 0)
+            {
+                return (false, "The selected book is currently out of stock.");
             }
 
             if (string.IsNullOrWhiteSpace(transaction.Status))
@@ -89,7 +108,8 @@ namespace Library_Management_System.Web.Services
             book.AvailableCopies--;
             _context.BorrowTransactions.Add(transaction);
 
-            return await _context.SaveChangesAsync() > 0;
+            bool result = await _context.SaveChangesAsync() > 0;
+            return result ? (true, null) : (false, "An error occurred while processing the checkout.");
         }
 
         public async Task<bool> ConfirmCheckoutAsync(int transactionId)
@@ -116,6 +136,12 @@ namespace Library_Management_System.Web.Services
                 .Where(bt => bt.UserId == userId && bt.ReturnDate == null && (bt.Status == "Borrowed" || bt.Status == "Overdue"))
                 .OrderByDescending(bt => bt.BorrowDate)
                 .ToListAsync();
+        }
+
+        public async Task<int> GetActiveBorrowCountAsync(string userId)
+        {
+            return await _context.BorrowTransactions
+                .CountAsync(bt => bt.UserId == userId && bt.ReturnDate == null && (bt.Status == "Borrowed" || bt.Status == "Overdue"));
         }
 
         public async Task<bool> UpdateTransactionAsync(BorrowTransaction transaction)

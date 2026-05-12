@@ -138,6 +138,47 @@
     </div>
 
     <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header">Payment History</div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr class="small text-uppercase text-muted">
+                        <th class="ps-4">Book / Transaction</th>
+                        <th>Fine Created</th>
+                        <th>Paid At</th>
+                        <th class="text-end">Amount</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @{ var payments = ViewBag.PaymentHistory as List<Fine>; }
+                @if (payments == null || !payments.Any()) { <tr><td colspan="5" class="text-center text-muted py-3">No payment records found.</td></tr> }
+                else
+                {
+                    foreach (var fine in payments)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div class="fw-bold">@fine.BorrowTransaction?.Book?.Title</div>
+                                <div class="small text-muted">Transaction #@fine.TransactionId</div>
+                            </td>
+                            <td class="small">@fine.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                            <td class="small text-success fw-bold">@(fine.PaidAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                            <td class="text-end fw-bold">@fine.Amount.ToString("C")</td>
+                            <td class="text-end pe-4">
+                                <a asp-action="DownloadReceipt" asp-route-fineId="@fine.FineId" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-download me-1"></i> Receipt
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
         <div class="card-header">Login & Activity History (Recent 50)</div>
         <div class="table-responsive">
             <table class="table table-sm table-striped mb-0">
