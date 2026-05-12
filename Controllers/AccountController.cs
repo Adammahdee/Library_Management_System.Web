@@ -1,4 +1,5 @@
 using Library_Management_System.Web.Models;
+using Library_Management_System.Web.Data;
 using Library_Management_System.Web.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -12,17 +13,20 @@ namespace Library_Management_System.Web.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             SignInManager<ApplicationUser> signInManager,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
+            ApplicationDbContext context,
             ILogger<AccountController> logger)
         {
             _signInManager = signInManager;
             _userManager = userManager;
             _roleManager = roleManager;
+            _context = context;
             _logger = logger;
         }
 
@@ -64,6 +68,15 @@ namespace Library_Management_System.Web.Controllers
             if (result.Succeeded)
             {
                 _logger.LogInformation("User {Email} logged in.", model.Email);
+                _context.AuditLogs.Add(new AuditLog
+                {
+                    TableName = "Authentication",
+                    ActionType = "Login",
+                    LogDate = DateTime.UtcNow,
+                    UserId = user.Id,
+                    Description = $"User {user.Email} logged in."
+                });
+                await _context.SaveChangesAsync();
                 if (!string.IsNullOrWhiteSpace(model.ReturnUrl) && Url.IsLocalUrl(model.ReturnUrl))
                 {
                     return Redirect(model.ReturnUrl);
@@ -141,7 +154,17 @@ namespace Library_Management_System.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
+            var userId = _userManager.GetUserId(User);
             await _signInManager.SignOutAsync();
+            _context.AuditLogs.Add(new AuditLog
+            {
+                TableName = "Authentication",
+                ActionType = "Logout",
+                LogDate = DateTime.UtcNow,
+                UserId = userId,
+                Description = "User logged out."
+            });
+            await _context.SaveChangesAsync();
             return RedirectToAction("Login", "Account");
         }
 

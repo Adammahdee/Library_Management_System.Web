@@ -25,28 +25,47 @@ namespace Library_Management_System.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
+            // Section 1: Base statistics
             var totalBooks = await _context.Books.CountAsync();
             var totalUsers = await _userManager.Users.CountAsync();
-            
-            var borrowedBooks = await _context.BorrowTransactions
-                .CountAsync(t => t.Status == "Borrowed");
 
-            var returnedBooks = await _context.BorrowTransactions
-                .CountAsync(t => t.Status == "Returned");
+            var now = DateTime.Now;
 
-            var overdueBooks = await _context.BorrowTransactions
-                .CountAsync(t => t.ReturnDate == null && t.DueDate < DateTime.Now);
+            var borrowedBooks = await _context.BorrowTransactions.CountAsync(t => t.Status == "Borrowed");
+            var returnedBooks = await _context.BorrowTransactions.CountAsync(t => t.Status == "Returned");
+            var pendingFinesCount = await _context.Fines.CountAsync(f => !f.IsPaid);
+            var totalFineAmount = await _context.Fines.Where(f => !f.IsPaid).SumAsync(f => (decimal?)f.Amount) ?? 0;
 
-            var pendingFinesCount = await _context.Fines
-                .CountAsync(f => !f.IsPaid);
+            // Section 2: Overdue transactions (fetch first, compute in memory to avoid provider coercion issues)
+            var overdueTransactionRows = await _context.BorrowTransactions
+                .Include(t => t.User)
+                .Include(t => t.Book)
+                .Where(t => t.ReturnDate == null && t.DueDate < now)
+                .OrderBy(t => t.DueDate)
+                .Take(5)
+                .ToListAsync();
 
-            var totalFineAmount = await _context.Fines
-                .Where(f => !f.IsPaid)
-                .SumAsync(f => (decimal?)f.Amount) ?? 0;
+            var overdueTransactions = overdueTransactionRows
+                .Select(t =>
+                {
+                    var daysOverdue = (now.Date - t.DueDate.Date).Days;
+                    if (daysOverdue < 0) daysOverdue = 0;
 
-            // Calculate monthly revenue for the last 6 months
-            var lastSixMonths = DateTime.Now.AddMonths(-5);
-            var monthlyRevenueQuery = await _context.Fines
+                    return new OverdueTransactionViewModel
+                    {
+                        BorrowerName = t.User?.FullName ?? "N/A",
+                        BookTitle = t.Book?.Title ?? "N/A",
+                        DueDate = t.DueDate,
+                        DaysOverdue = daysOverdue
+                    };
+                })
+                .ToList();
+
+            var overdueBooks = await _context.BorrowTransactions.CountAsync(t => t.ReturnDate == null && t.DueDate < now);
+
+            // Section 3: Fine revenue
+            var lastSixMonths = now.AddMonths(-5);
+            var monthlyRevenueRows = await _context.Fines
                 .Where(f => f.IsPaid && f.CreatedAt >= new DateTime(lastSixMonths.Year, lastSixMonths.Month, 1))
                 .GroupBy(f => new { f.CreatedAt.Year, f.CreatedAt.Month })
                 .Select(g => new
@@ -58,12 +77,13 @@ namespace Library_Management_System.Web.Controllers
                 .OrderBy(x => x.Year).ThenBy(x => x.Month)
                 .ToListAsync();
 
-            var revenueData = monthlyRevenueQuery.Select(x => new MonthlyRevenueViewModel
+            var revenueData = monthlyRevenueRows.Select(x => new MonthlyRevenueViewModel
             {
                 Month = new DateTime(x.Year, x.Month, 1).ToString("MMM"),
                 Revenue = x.Revenue
             }).ToList();
 
+            // Section 4: Users/fines aggregation
             var topFineUsers = await _context.Fines
                 .Where(f => !f.IsPaid)
                 .GroupBy(f => new { f.BorrowTransaction.User.FullName, f.BorrowTransaction.User.Email })
@@ -77,21 +97,8 @@ namespace Library_Management_System.Web.Controllers
                 .Take(5)
                 .ToListAsync();
 
-            var overdueTransactions = await _context.BorrowTransactions
-                .Include(t => t.User)
-                .Include(t => t.Book)
-                .Where(t => t.ReturnDate == null && t.DueDate < DateTime.Now)
-                .OrderBy(t => t.DueDate)
-                .Take(5)
-                .Select(t => new OverdueTransactionViewModel
-                {
-                    BorrowerName = t.User.FullName ?? "N/A",
-                    BookTitle = t.Book.Title,
-                    DueDate = t.DueDate,
-                    DaysOverdue = (DateTime.Now - t.DueDate).Days
-                }).ToListAsync();
-
-            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+            // Section 5: Recent category activity
+            var thirtyDaysAgo = now.AddDays(-30);
             var topCategories = await _context.BorrowTransactions
                 .Where(t => t.BorrowDate >= thirtyDaysAgo && t.Book != null && t.Book.Category != null)
                 .GroupBy(t => t.Book!.Category!.CategoryName)

@@ -72,6 +72,9 @@ namespace Library_Management_System.Web.Data
                 entity.Property(u => u.StaffNumber)
                     .HasMaxLength(50);
 
+                entity.Property(u => u.CreatedAt)
+                    .IsRequired();
+
                 entity.HasOne(u => u.Department)
                     .WithMany(d => d.Users)
                     .HasForeignKey(u => u.DepartmentId)

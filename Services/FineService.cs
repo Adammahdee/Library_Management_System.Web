@@ -1,6 +1,7 @@
 using Library_Management_System.Web.Data;
 using Library_Management_System.Web.Models;
 using Library_Management_System.Web.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace Library_Management_System.Web.Services
@@ -8,10 +9,16 @@ namespace Library_Management_System.Web.Services
     public class FineService : IFineService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly decimal _dailyRate;
+        private readonly int _graceDays;
 
-        public FineService(ApplicationDbContext context)
+        public FineService(ApplicationDbContext context, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
+            _dailyRate = configuration.GetValue<decimal?>("FineRules:DailyRate") ?? 1.0m;
+            _graceDays = configuration.GetValue<int?>("FineRules:GraceDays") ?? 0;
         }
 
         public async Task GenerateFineAsync(BorrowTransaction transaction)
@@ -43,13 +50,14 @@ namespace Library_Management_System.Web.Services
 
         public async Task<decimal> EnsureOverdueFineAsync(BorrowTransaction transaction, DateTime effectiveDate, bool updateOpenLoanStatus)
         {
-            if (effectiveDate.Date <= transaction.DueDate.Date)
+            var effectiveDueDate = transaction.DueDate.Date.AddDays(_graceDays);
+            if (effectiveDate.Date <= effectiveDueDate)
             {
                 return 0m;
             }
 
-            var overdueDays = (effectiveDate.Date - transaction.DueDate.Date).Days;
-            var computedAmount = overdueDays * 1.00m;
+            var overdueDays = (effectiveDate.Date - effectiveDueDate).Days;
+            var computedAmount = overdueDays * _dailyRate;
 
             var existingUnpaidFine = await _context.Fines
                 .FirstOrDefaultAsync(f => f.TransactionId == transaction.TransactionId && !f.IsPaid);
@@ -82,6 +90,14 @@ namespace Library_Management_System.Web.Services
                 return false;
 
             fine.IsPaid = true;
+            _context.AuditLogs.Add(new AuditLog
+            {
+                TableName = nameof(Fine),
+                ActionType = "FinePaid",
+                LogDate = DateTime.UtcNow,
+                UserId = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                Description = $"Fine receipt generated for FineId={fine.FineId}, Amount={fine.Amount:0.00}, TransactionId={fine.TransactionId}"
+            });
 
             await _context.SaveChangesAsync();
             return true;

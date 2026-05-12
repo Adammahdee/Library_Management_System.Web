@@ -18,6 +18,9 @@ namespace Library_Management_System.Web.Models
         public bool IsActive { get; set; }
             = true;
 
+        public DateTime CreatedAt { get; set; }
+            = DateTime.UtcNow;
+
         public ICollection<BorrowTransaction> BorrowTransactions { get; set; }
             = new List<BorrowTransaction>();
 

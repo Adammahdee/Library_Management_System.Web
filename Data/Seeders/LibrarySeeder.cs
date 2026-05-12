@@ -7,6 +7,8 @@ namespace Library_Management_System.Web.Data.Seeders
     {
         public static async Task SeedSampleCatalogAsync(ApplicationDbContext context)
         {
+            await SeedDepartmentsAsync(context);
+
             if (await context.Books.AnyAsync())
             {
                 return;
@@ -59,6 +61,35 @@ namespace Library_Management_System.Web.Data.Seeders
                 AuthorId = author.AuthorId
             });
 
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedDepartmentsAsync(ApplicationDbContext context)
+        {
+            var defaultDepartments = new[]
+            {
+                "Computer Science",
+                "Business Administration",
+                "Electrical Engineering",
+                "Mechanical Engineering",
+                "Mathematics"
+            };
+
+            var existingDepartmentNames = await context.Departments
+                .Select(d => d.DepartmentName)
+                .ToListAsync();
+
+            var missingDepartments = defaultDepartments
+                .Where(name => !existingDepartmentNames.Contains(name, StringComparer.OrdinalIgnoreCase))
+                .Select(name => new Department { DepartmentName = name })
+                .ToList();
+
+            if (missingDepartments.Count == 0)
+            {
+                return;
+            }
+
+            context.Departments.AddRange(missingDepartments);
             await context.SaveChangesAsync();
         }
     }

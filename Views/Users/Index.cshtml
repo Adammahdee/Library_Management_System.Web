@@ -1,14 +1,65 @@
-@model IEnumerable<Library_Management_System.Web.Models.ApplicationUser>
-@using System.Collections.Generic
+@model IEnumerable<Library_Management_System.Web.Models.ViewModels.UserViewModel>
 
 @{
     ViewData["Title"] = "Users";
     Layout = "_AdminLayout";
-    var userRoles = ViewBag.UserRoles as Dictionary<string, IList<string>> ?? new Dictionary<string, IList<string>>();
+    var availableRoles = ViewBag.AvailableRoles as List<string> ?? new List<string>();
+    var search = ViewBag.Search as string;
+    var selectedRole = ViewBag.Role as string;
+    var selectedStatus = ViewBag.Status as string;
+    int currentPage = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int totalItems = ViewBag.TotalItems ?? 0;
 }
 
 <div class="container-fluid px-4 mt-4">
-    <h1 class="h3 mb-4">Users</h1>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Users</h1>
+        <a asp-action="Create" class="btn btn-primary">Create User</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">Search</label>
+                    <input type="text" class="form-control" name="search" value="@search" placeholder="Name, email, username" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Role</label>
+                    <select class="form-select" name="role">
+                        <option value="">All roles</option>
+                        @foreach (var role in availableRoles)
+                        {
+                            <option value="@role" selected="@(selectedRole == role)">@role</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All</option>
+                        <option value="active" selected="@(selectedStatus == "active")">Active</option>
+                        <option value="inactive" selected="@(selectedStatus == "inactive")">Inactive</option>
+                        <option value="locked" selected="@(selectedStatus == "locked")">Locked</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card shadow-sm border-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
@@ -19,44 +70,86 @@
                         <th>Department</th>
                         <th>Roles</th>
                         <th>Status</th>
+                        <th>Created</th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var user in Model)
+                    @if (!Model.Any())
                     {
-                        <tr>
+                        <tr><td colspan="6" class="text-center py-4 text-muted">No users found.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var user in Model)
+                        {
+                            <tr>
                             <td>@user.FullName</td>
                             <td>@user.Email</td>
-                            <td>@(user.Department?.DepartmentName ?? "N/A")</td>
+                            <td>@user.DepartmentName</td>
                             <td>
-                                @{
-                                    userRoles.TryGetValue(user.Id, out var roles);
-                                    var roleText = roles != null && roles.Any() ? string.Join(", ", roles) : "No roles";
-                                }
-                                <span class="badge bg-info text-dark">@roleText</span>
+                                <span class="badge bg-info text-dark">@(user.Roles.Any() ? string.Join(", ", user.Roles) : "No roles")</span>
                             </td>
                             <td>
-                                @if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
+                                @if (user.IsLocked)
                                 {
                                     <span class="badge bg-danger">Locked</span>
                                 }
-                                else if (user.IsActive)
-                                {
-                                    <span class="badge bg-success">Active</span>
-                                }
-                                else
-                                {
+                                    else if (user.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
                                     <span class="badge bg-secondary">Inactive</span>
                                 }
                             </td>
+                            <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
                             <td class="text-end">
                                 <a asp-action="Details" asp-route-id="@user.Id" class="btn btn-sm btn-outline-info">Details</a>
+                                <a asp-action="Edit" asp-route-id="@user.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                @if (user.IsLocked)
+                                {
+                                    <form asp-action="UnlockUser" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success">Unlock</button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <form asp-action="LockUser" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@user.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-warning">Lock</button>
+                                    </form>
+                                }
+                                <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this user?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@user.Id" />
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
                             </td>
                         </tr>
+                    }
                     }
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted small">Total users: @totalItems</div>
+        <nav>
+            <ul class="pagination pagination-sm mb-0">
+                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-search="@search" asp-route-role="@selectedRole" asp-route-status="@selectedStatus" asp-route-page="@(currentPage - 1)">Prev</a>
+                </li>
+                <li class="page-item disabled"><span class="page-link">Page @currentPage / @totalPages</span></li>
+                <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Index" asp-route-search="@search" asp-route-role="@selectedRole" asp-route-status="@selectedStatus" asp-route-page="@(currentPage + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
     </div>
 </div>
