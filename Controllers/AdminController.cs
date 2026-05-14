@@ -9,7 +9,7 @@ using Library_Management_System.Web.Services.Interfaces;
 
 namespace Library_Management_System.Web.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Librarian")]
     public class AdminController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -23,6 +23,7 @@ namespace Library_Management_System.Web.Controllers
             _fineService = fineService;
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Index()
         {
             // Section 1: Base statistics
@@ -242,6 +243,7 @@ namespace Library_Management_System.Web.Controllers
             return View(paidFines);
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AuditLogs()
         {
             var logs = await _context.AuditLogs
