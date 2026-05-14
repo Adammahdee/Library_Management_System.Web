@@ -13,6 +13,57 @@
         </a>
     </div>
 
+    <form asp-action="Index" method="get" class="row g-3 mb-4">
+
+    <div class="col-md-6">
+        <input
+            type="text"
+            name="searchString"
+            value="@ViewData["CurrentFilter"]"
+            class="form-control"
+            placeholder="Search by title, ISBN, publisher, or author" />
+    </div>
+
+    <div class="col-md-3">
+        <select name="sortOrder" class="form-select">
+
+            <option value="">
+                Sort A-Z
+            </option>
+
+            <option value="title_desc"
+                selected="@(ViewData["CurrentSort"]?.ToString() == "title_desc")">
+                Sort Z-A
+            </option>
+
+            <option value="newest"
+                selected="@(ViewData["CurrentSort"]?.ToString() == "newest")">
+                Newest
+            </option>
+
+            <option value="oldest"
+                selected="@(ViewData["CurrentSort"]?.ToString() == "oldest")">
+                Oldest
+            </option>
+
+        </select>
+    </div>
+
+    <div class="col-md-3 d-flex gap-2">
+
+        <button type="submit" class="btn btn-primary">
+            Search
+        </button>
+
+        <a asp-action="Index"
+           class="btn btn-outline-secondary">
+            Reset
+        </a>
+
+    </div>
+
+</form>
+
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white py-3 border-bottom">
             <h6 class="m-0 fw-bold text-primary">Library Catalog</h6>
@@ -83,13 +134,17 @@
             <ul class="pagination pagination-sm mb-0">
                 <li class="page-item @prevDisabled">
                     <a class="page-link shadow-none" asp-action="Index" 
-                       asp-route-pageNumber="@(pageIndex - 1)">
+                       asp-route-pageNumber="@(pageIndex - 1)"
+                       asp-route-searchString="@ViewData["CurrentFilter"]"
+                       asp-route-sortOrder="@ViewData["CurrentSort"]">
                         <i class="fas fa-chevron-left me-1"></i> Previous
                     </a>
                 </li>
                 <li class="page-item @nextDisabled">
                     <a class="page-link shadow-none" asp-action="Index" 
-                       asp-route-pageNumber="@(pageIndex + 1)">
+                       asp-route-pageNumber="@(pageIndex + 1)"
+                       asp-route-searchString="@ViewData["CurrentFilter"]"
+                       asp-route-sortOrder="@ViewData["CurrentSort"]">
                         Next <i class="fas fa-chevron-right ms-1"></i>
                     </a>
                 </li>

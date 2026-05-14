@@ -18,30 +18,71 @@ namespace Library_Management_System.Web.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(int? pageNumber)
+        public async Task<IActionResult> Index(
+            string searchString,
+            string sortOrder,
+            int? pageNumber)
         {
             int pageSize = 10;
             int pageIndex = pageNumber ?? 1;
 
-            var query = _context.Books
+            ViewData["CurrentFilter"] = searchString;
+            ViewData["CurrentSort"] = sortOrder;
+
+            IQueryable<Book> query = _context.Books
                 .Include(book => book.Category)
-                .AsNoTracking()
-                .OrderBy(book => book.Title);
+                .Include(book => book.Publisher)
+                .Include(book => book.BookAuthors)
+                    .ThenInclude(bookAuthor => bookAuthor.Author)
+                .AsNoTracking();
 
-            var totalItems = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            // Search
+            if (!string.IsNullOrWhiteSpace(searchString))
+            {
+                searchString = searchString.Trim();
 
-            var books = await query
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+                query = query.Where(book =>
+                    book.Title.Contains(searchString) ||
+                    book.ISBN.Contains(searchString) ||
+                    (book.Publisher != null &&
+                     book.Publisher.PublisherName.Contains(searchString)) ||
+                    book.BookAuthors.Any(bookAuthor =>
+                        bookAuthor.Author != null &&
+                        bookAuthor.Author.AuthorName.Contains(searchString)));
+    }
 
-            ViewData["PageIndex"] = pageIndex;
-            ViewData["TotalPages"] = Math.Max(1, totalPages);
+    // Sorting
+    query = sortOrder switch
+    {
+        "title_desc" =>
+            query.OrderByDescending(book => book.Title),
 
-            // Updated to return the Book entity list as per mapping requirements
-            return View(books);
-        }
+        "newest" =>
+            query.OrderByDescending(book => book.BookId),
+
+        "oldest" =>
+            query.OrderBy(book => book.BookId),
+
+        _ =>
+            query.OrderBy(book => book.Title)
+    };
+
+    int totalItems = await query.CountAsync();
+
+    int totalPages = (int)Math.Ceiling(
+        totalItems / (double)pageSize);
+
+    var books = await query
+        .Skip((pageIndex - 1) * pageSize)
+        .Take(pageSize)
+        .ToListAsync();
+
+    ViewData["PageIndex"] = pageIndex;
+
+    ViewData["TotalPages"] = Math.Max(1, totalPages);
+
+    return View(books);
+}
 
         public async Task<IActionResult> Create()
         {
