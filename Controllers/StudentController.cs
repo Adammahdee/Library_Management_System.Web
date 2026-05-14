@@ -10,6 +10,9 @@ namespace Library_Management_System.Web.Controllers
     [Authorize(Roles = "Student")]
     public class StudentController : Controller
     {
+        // Core logic for the Student Portal. 
+        // Ensures students only access their own borrowing data.
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 

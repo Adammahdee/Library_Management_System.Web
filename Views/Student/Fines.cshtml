@@ -1,0 +1,92 @@
+@model IEnumerable<Library_Management_System.Web.Models.Fine>
+
+@{
+    ViewData["Title"] = "My Fines";
+}
+
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Fines</h2>
+    </div>
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body">
+
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+
+                    <table class="table table-hover align-middle">
+
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Paid At</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+
+                                    <td>
+                                        @item.BorrowTransaction?.Book?.Title
+                                    </td>
+
+                                    <td>
+                                        @item.Amount
+                                    </td>
+
+                                    <td>
+
+                                        @if (item.IsPaid)
+                                        {
+                                            <span class="badge bg-success">
+                                                Paid
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                Unpaid
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+                                        @item.CreatedAt.ToString("dd MMM yyyy")
+                                    </td>
+
+                                    <td>
+                                        @(item.PaidAt?.ToString("dd MMM yyyy") ?? "-")
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info mb-0">
+                    No fines found.
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+</div>

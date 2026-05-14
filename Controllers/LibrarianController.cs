@@ -11,6 +11,7 @@ namespace Library_Management_System.Web.Controllers
     [Authorize(Roles = "Librarian,Admin")]
     public class LibrarianController : Controller
     {
+        // Implementation for Librarian Dashboard
         private readonly ApplicationDbContext _context;
 
         public LibrarianController(ApplicationDbContext context)

@@ -24,11 +24,11 @@
                             <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
                             @if (User.IsInRole("Admin"))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index">Dashboard</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="Index">Admin Dashboard</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Users" asp-action="Index">User Management</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Books" asp-action="Index">Books</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Authors" asp-action="Index">Authors</a></li>
@@ -40,7 +40,7 @@
                             }
                             else if (User.IsInRole("Librarian"))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Librarian" asp-action="Index">Dashboard</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Librarian" asp-action="Index">Librarian Dashboard</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Books" asp-action="Index">Books</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Authors" asp-action="Index">Authors</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Categories" asp-action="Index">Categories</a></li>
