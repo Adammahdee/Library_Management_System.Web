@@ -1,0 +1,151 @@
+@model IEnumerable<Library_Management_System.Web.Models.Fine>
+
+@{
+    ViewData["Title"] = "Fine Management";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid px-4 mt-4">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 fw-bold">Fine Management</h1>
+    </div>
+
+    <div class="mb-3">
+        <a asp-action="Index"
+           class="btn btn-outline-secondary btn-sm">
+            All
+        </a>
+
+        <a asp-action="Index"
+           asp-route-status="unpaid"
+           class="btn btn-outline-danger btn-sm">
+            Unpaid
+        </a>
+
+        <a asp-action="Index"
+           asp-route-status="paid"
+           class="btn btn-outline-success btn-sm">
+            Paid
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Borrower</th>
+                            <th>Book</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6"
+                                    class="text-center py-5 text-muted">
+                                    No fines found.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var fine in Model)
+                            {
+                                <tr>
+
+                                    <td class="ps-4">
+                                        @fine.BorrowTransaction?.User?.FullName
+                                    </td>
+
+                                    <td>
+                                        @fine.BorrowTransaction?.Book?.Title
+                                    </td>
+
+                                    <td>
+                                        $@fine.Amount
+                                    </td>
+
+                                    <td>
+                                        @if (fine.IsPaid)
+                                        {
+                                            <span class="badge bg-success">
+                                                Paid
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                Unpaid
+                                            </span>
+                                        }
+                                    </td>
+
+                                    <td>
+                                        @fine.CreatedAt.ToString("yyyy-MM-dd")
+                                    </td>
+
+                                    <td class="text-end pe-4">
+
+                                        <a asp-action="Details"
+                                           asp-route-id="@fine.FineId"
+                                           class="btn btn-sm btn-outline-info">
+                                            Details
+                                        </a>
+
+                                        @if (!fine.IsPaid)
+                                        {
+                                            <form asp-action="Pay"
+                                                  asp-route-id="@fine.FineId"
+                                                  method="post"
+                                                  class="d-inline">
+
+                                                @Html.AntiForgeryToken()
+
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-success">
+                                                    Mark Paid
+                                                </button>
+
+                                            </form>
+                                        }
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+</div>

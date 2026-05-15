@@ -1,33 +1,104 @@
 @model IEnumerable<Library_Management_System.Web.Models.Category>
 
 @{
-    ViewData["Title"] = "Categories";
+    ViewData["Title"] = "Category Management";
+    Layout = "_AdminLayout";
 }
 
-<h1>Categories</h1>
+<div class="container-fluid px-4">
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Add Category</a>
-</p>
+    <div class="d-flex justify-content-between align-items-center mt-4 mb-4">
+        <div>
+            <h1 class="h3 fw-bold text-dark mb-1">
+                Categories
+            </h1>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Category Name</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
+            <p class="text-muted mb-0">
+                Manage library book categories.
+            </p>
+        </div>
 
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.CategoryName</td>
+        <a asp-action="Create" class="btn btn-primary shadow-sm">
+            <i class="fas fa-plus me-1"></i>
+            Add Category
+        </a>
+    </div>
 
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.CategoryId">Edit</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+    <div class="card shadow-sm border-0">
+
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="m-0 fw-bold text-primary">
+                Category List
+            </h6>
+        </div>
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="bg-light">
+                        <tr class="small text-uppercase text-muted">
+                            <th class="ps-4">
+                                Category Name
+                            </th>
+
+                            <th class="text-end pe-4">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="2" class="text-center py-5 text-muted">
+                                    No categories found.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+
+                                    <td class="ps-4 py-3 fw-semibold text-dark">
+                                        @item.CategoryName
+                                    </td>
+
+                                    <td class="text-end pe-4">
+
+                                        <div class="btn-group">
+
+                                            <a asp-action="Edit"
+                                               asp-route-id="@item.CategoryId"
+                                               class="btn btn-sm btn-outline-secondary"
+                                               title="Edit">
+
+                                                <i class="fas fa-edit"></i>
+
+                                            </a>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            }
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
