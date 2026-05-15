@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using Library_Management_System.Web.Data;
 using Library_Management_System.Web.Models;
 using Library_Management_System.Web.Services;
@@ -130,6 +132,11 @@ namespace Library_Management_System.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Checkout(BorrowTransaction transaction)
         {
+            transaction.ReturnDate = null;
+            // Clear navigation properties from validation as they aren't provided by the form
+            ModelState.Remove(nameof(transaction.Book));
+            ModelState.Remove(nameof(transaction.User));
+
             var book = await _context.Books.FirstOrDefaultAsync(b => b.BookId == transaction.BookId);
 
             if (transaction.DueDate <= transaction.BorrowDate)
@@ -192,24 +199,71 @@ namespace Library_Management_System.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BorrowTransaction transaction)
         {
+            return await Checkout(transaction);
+        }
+
+        /* 
+           The logic below is being replaced by the consolidated Checkout logic 
+           to ensure available copies and existing loans are always checked.
+        */
+        private async Task<IActionResult> LegacyCreateLogic(BorrowTransaction transaction)
+        {
+            transaction.ReturnDate = null;
             if (transaction.DueDate <= transaction.BorrowDate)
             {
-                ModelState.AddModelError(nameof(transaction.DueDate), "Due date must be after the borrow date.");
+                ModelState.AddModelError(
+                    nameof(transaction.DueDate),
+                    "Due date must be after the borrow date.");
             }
 
-            if (ModelState.IsValid)
+            Console.WriteLine("CREATE ACTION HIT");
+
+            Console.WriteLine($"UserId: {transaction.UserId}");
+            Console.WriteLine($"BookId: {transaction.BookId}");
+            Console.WriteLine($"BorrowDate: {transaction.BorrowDate}");
+            Console.WriteLine($"DueDate: {transaction.DueDate}");
+            Console.WriteLine($"Status: {transaction.Status}");
+            if (!ModelState.IsValid)
             {
-                var (success, error) = await _borrowService.CheckoutAsync(transaction);
-                if (success)
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                foreach (var err in errors)
                 {
-                    TempData["SuccessMessage"] = "Borrow transaction created successfully.";
-                    return RedirectToAction(nameof(Index));
+                    Console.WriteLine($"MODEL ERROR: {err}");
                 }
 
-                ModelState.AddModelError(string.Empty, error ?? "Unable to create transaction. Verify book availability.");
+                await PopulateFormDropdownsAsync(
+                    transaction.UserId,
+                    transaction.BookId,
+                    transaction.Status);
+
+                return View(transaction);
             }
 
-            await PopulateFormDropdownsAsync(transaction.UserId, transaction.BookId, transaction.Status);
+            var (success, error) =
+                await _borrowService.CheckoutAsync(transaction);
+
+            if (success)
+            {
+                Console.WriteLine("TRANSACTION SAVED SUCCESSFULLY");
+                TempData["SuccessMessage"] =
+                    "Borrow transaction created successfully.";
+
+                return RedirectToAction(nameof(Index));
+            }
+
+            ModelState.AddModelError(
+                string.Empty,
+                error ?? "Unable to create transaction.");
+
+            await PopulateFormDropdownsAsync(
+                transaction.UserId,
+                transaction.BookId,
+                transaction.Status);
+
             return View(transaction);
         }
 
@@ -346,7 +400,7 @@ namespace Library_Management_System.Web.Controllers
             ViewBag.UserId = new SelectList(users, "Id", "FullName", selectedUserId);
             ViewBag.BookId = new SelectList(books, "BookId", "Title", selectedBookId);
             ViewBag.Status = new SelectList(
-                new[] { "Borrowed", "Reserved", "Returned", "Returned (Overdue)", "Cancelled", "Overdue" },
+                new[] { "Borrowed", "Reserved" },
                 selectedStatus ?? "Borrowed");
 
             if (!books.Any())

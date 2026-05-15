@@ -21,6 +21,10 @@ namespace Library_Management_System.Web.Controllers
         public async Task<IActionResult> Index(
             string searchString,
             string sortOrder,
+            int? categoryId,
+            int? publisherId,
+            string availabilityFilter,
+            int? authorId,
             int? pageNumber)
         {
             int pageSize = 10;
@@ -28,6 +32,22 @@ namespace Library_Management_System.Web.Controllers
 
             ViewData["CurrentFilter"] = searchString;
             ViewData["CurrentSort"] = sortOrder;
+            ViewData["CurrentCategory"] = categoryId;
+            ViewData["CurrentPublisher"] = publisherId;
+            ViewData["CurrentAvailability"] = availabilityFilter;
+            ViewData["CurrentAuthor"] = authorId;
+
+            ViewBag.Categories = await _context.Categories
+                .OrderBy(c => c.CategoryName)
+                .ToListAsync();
+
+            ViewBag.Publishers = await _context.Publishers
+                .OrderBy(p => p.PublisherName)
+                .ToListAsync();
+
+            ViewBag.Authors = await _context.Authors
+                .OrderBy(a => a.AuthorName)
+                .ToListAsync();
 
             IQueryable<Book> query = _context.Books
                 .Include(book => book.Category)
@@ -51,6 +71,34 @@ namespace Library_Management_System.Web.Controllers
                         bookAuthor.Author.AuthorName.Contains(searchString)));
     }
 
+            // Filtering
+            if (categoryId.HasValue)
+            {
+                query = query.Where(book => book.CategoryId == categoryId.Value);
+            }
+
+            if (publisherId.HasValue)
+            {
+                query = query.Where(book => book.PublisherId == publisherId.Value);
+            }
+
+            if (authorId.HasValue)
+            {
+                query = query.Where(book => book.BookAuthors.Any(ba => ba.AuthorId == authorId.Value));
+            }
+
+            if (!string.IsNullOrEmpty(availabilityFilter))
+            {
+                switch (availabilityFilter)
+                {
+                    case "available":
+                        query = query.Where(book => book.AvailableCopies > 0);
+                        break;
+                    case "unavailable":
+                        query = query.Where(book => book.AvailableCopies == 0);
+                        break;
+                }
+            }
     // Sorting
     query = sortOrder switch
     {

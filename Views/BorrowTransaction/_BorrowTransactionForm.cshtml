@@ -7,44 +7,56 @@
     <div class="alert alert-warning">@ViewBag.BookWarning</div>
 }
 
+<input type="hidden" asp-for="Status" value="Borrowed" />
+
 <div class="row g-3">
+
     <div class="col-md-6">
         <label asp-for="UserId" class="form-label"></label>
-        <select asp-for="UserId" class="form-select" asp-items="ViewBag.UserId">
+
+        <select asp-for="UserId"
+                class="form-select"
+                asp-items="ViewBag.UserId">
+
             <option value="">Select User</option>
+
         </select>
+
         <span asp-validation-for="UserId" class="text-danger"></span>
     </div>
 
     <div class="col-md-6">
         <label asp-for="BookId" class="form-label"></label>
-        <select asp-for="BookId" class="form-select" asp-items="ViewBag.BookId">
+
+        <select asp-for="BookId"
+                class="form-select"
+                asp-items="ViewBag.BookId">
+
             <option value="">Select Book</option>
+
         </select>
+
         <span asp-validation-for="BookId" class="text-danger"></span>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-6">
         <label asp-for="BorrowDate" class="form-label"></label>
-        <input asp-for="BorrowDate" type="date" class="form-control" />
+
+        <input asp-for="BorrowDate"
+               type="date"
+               class="form-control" />
+
         <span asp-validation-for="BorrowDate" class="text-danger"></span>
     </div>
 
-    <div class="col-md-4">
+    <div class="col-md-6">
         <label asp-for="DueDate" class="form-label"></label>
-        <input asp-for="DueDate" type="date" class="form-control" />
+
+        <input asp-for="DueDate"
+               type="date"
+               class="form-control" />
+
         <span asp-validation-for="DueDate" class="text-danger"></span>
     </div>
 
-    <div class="col-md-4">
-        <label asp-for="ReturnDate" class="form-label"></label>
-        <input asp-for="ReturnDate" type="date" class="form-control" />
-        <span asp-validation-for="ReturnDate" class="text-danger"></span>
-    </div>
-
-    <div class="col-md-6">
-        <label asp-for="Status" class="form-label"></label>
-        <select asp-for="Status" class="form-select" asp-items="ViewBag.Status"></select>
-        <span asp-validation-for="Status" class="text-danger"></span>
-    </div>
 </div>
